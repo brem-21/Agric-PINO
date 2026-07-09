@@ -1,0 +1,680 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String             @id @default(cuid())
+  name              String
+  email             String?            @unique
+  emailVerified     DateTime?
+  phone             String             @unique
+  password          String?
+  image             String?
+  role              UserRole           @default(FARMER)
+  region            String?
+  district          String?
+  isActive          Boolean            @default(true)
+  ghanaCardNumber   String?            @unique
+  ghanaCardName     String?
+  residenceLocation String?
+  isVerified        Boolean            @default(false)
+  verifiedAt        DateTime?
+  latitude          Float?
+  longitude         Float?
+  lastSeen          DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  isVendor          Boolean            @default(false)
+  accounts          Account[]
+  buyerProfile      BuyerProfile?
+  complaints        Complaint[]        @relation("UserComplaints")
+  events            UserEvent[]
+  recommendations   Recommendation[]
+  farmerProfile     FarmerProfile?
+  following         Follow[]           @relation("UserFollowing")
+  followers         Follow[]           @relation("UserFollowers")
+  logisticsProfile  LogisticsProfile?
+  receivedMessages  Message[]          @relation("ReceivedMessages")
+  sentMessages      Message[]          @relation("SentMessages")
+  sentNotifs        Notification[]     @relation("NotificationActor")
+  notifications     Notification[]     @relation("NotificationRecipient")
+  buyerOrders       Order[]            @relation("BuyerOrders")
+  farmerOrders      Order[]            @relation("FarmerOrders")
+  listings          ProduceListing[]
+  reviewsGiven      Review[]           @relation("ReviewAuthor")
+  reviewsReceived   Review[]           @relation("ReviewTarget")
+  sessions          Session[]
+  transportRequests TransportRequest[]
+  vendorOrders      VendorOrder[]      @relation("CustomerVendorOrders")
+  vendorProfile     VendorProfile?
+  verificationRequests VerificationRequest[] @relation("VerificationApplicant")
+  verificationReviews  VerificationRequest[] @relation("VerificationReviewer")
+  adminRequest         AdminRequest?          @relation("AdminRequestApplicant")
+  adminRequestReviews  AdminRequest[]         @relation("AdminRequestReviewer")
+}
+
+model FarmerProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  farmName     String
+  farmSize     Float?
+  description  String?
+  location     String
+  latitude     Float?
+  longitude    Float?
+  rating       Float    @default(0)
+  totalRatings Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  acceptsCOD   Boolean  @default(true)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BuyerProfile {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  businessName String?
+  businessType BuyerType @default(HOUSEHOLD)
+  description  String?
+  rating       Float     @default(0)
+  totalRatings Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LogisticsProfile {
+  id                String             @id @default(cuid())
+  userId            String             @unique
+  companyName       String?
+  vehicleType       VehicleType
+  vehicleCapacity   Float?
+  licensePlate      String?
+  coverageAreas     String[]
+  isAvailable       Boolean            @default(true)
+  rating            Float              @default(0)
+  totalRatings      Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transportRequests TransportRequest[]
+  deliveryLegs      DeliveryLeg[]
+}
+
+model ProduceListing {
+  id             String          @id @default(cuid())
+  // Monotonic push-counter — guarantees a true LIFO order for the marketplace feed
+  // even when many rows share the same createdAt (e.g. bulk-seeded data), which
+  // createdAt alone can't break ties on deterministically.
+  sequence       Int             @default(autoincrement())
+  farmerId       String
+  cropType       String
+  category       ProduceCategory
+  quantity       Float
+  unit           String
+  pricePerUnit   Float
+  currency       String          @default("GHS")
+  description    String?
+  images         String[]
+  harvestDate    DateTime?
+  expiryDate     DateTime?
+  location       String
+  latitude       Float?
+  longitude      Float?
+  status         ListingStatus   @default(ACTIVE)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  approvalNotes  String?
+  approvalStatus ApprovalStatus  @default(PENDING)
+  orders         Order[]
+  farmer         User            @relation(fields: [farmerId], references: [id])
+}
+
+model Order {
+  id               String            @id @default(cuid())
+  buyerId          String
+  farmerId         String
+  listingId        String
+  quantity         Float
+  totalAmount      Float
+  status           OrderStatus       @default(PENDING)
+  paymentStatus    PaymentStatus     @default(UNPAID)
+  fulfillmentType  OrderFulfillment  @default(DELIVERY)
+  notes            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deliveryNumber   String?           @unique
+  buyer            User              @relation("BuyerOrders", fields: [buyerId], references: [id])
+  farmer           User              @relation("FarmerOrders", fields: [farmerId], references: [id])
+  listing          ProduceListing    @relation(fields: [listingId], references: [id])
+  payment          Payment?
+  transportRequest TransportRequest?
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  orderId   String        @unique
+  amount    Float
+  currency  String        @default("GHS")
+  method    PaymentMethod @default(MOBILE_MONEY)
+  reference String?       @unique
+  status    PaymentStatus @default(UNPAID)
+  momoPhone String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  order     Order         @relation(fields: [orderId], references: [id])
+}
+
+model TransportRequest {
+  id                    String            @id @default(cuid())
+  orderId               String?           @unique
+  requesterId           String
+  providerId            String?
+  pickupLocation        String
+  pickupLat             Float?
+  pickupLong            Float?
+  deliveryLocation      String
+  deliveryLat           Float?
+  deliveryLong          Float?
+  scheduledDate         DateTime
+  estimatedCost         Float?
+  actualCost            Float?
+  status                TransportStatus   @default(PENDING)
+  paymentMethod         PaymentMethod?
+  paymentStatus         PaymentStatus     @default(UNPAID)
+  paymentReference      String?           @unique
+  notes                 String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  rejectedByRiders      String[]          @default([])
+  weightKg              Float?
+  estimatedDeliveryDate DateTime?
+  order                 Order?            @relation(fields: [orderId], references: [id])
+  provider              LogisticsProfile? @relation(fields: [providerId], references: [id])
+  requester             User              @relation(fields: [requesterId], references: [id])
+  legs                  DeliveryLeg[]
+}
+
+// One row per rider who has handled a leg of a (possibly relayed) delivery —
+// lets a farmer chain 3-4 riders on one TransportRequest for safer long-haul
+// coordination, while TransportRequest.providerId always reflects who currently
+// has custody of the produce.
+model DeliveryLeg {
+  id                 String           @id @default(cuid())
+  transportRequestId String
+  providerId         String
+  sequence           Int
+  status             TransportStatus  @default(ASSIGNED)
+  startedAt          DateTime         @default(now())
+  endedAt            DateTime?
+  handoffNote        String?
+  transportRequest   TransportRequest @relation(fields: [transportRequestId], references: [id], onDelete: Cascade)
+  provider           LogisticsProfile @relation(fields: [providerId], references: [id])
+
+  @@unique([transportRequestId, sequence])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+}
+
+model Review {
+  id        String          @id @default(cuid())
+  authorId  String
+  targetId  String
+  orderId   String?
+  orderType ReviewOrderType @default(ORDER)
+  rating    Int
+  comment   String?
+  createdAt DateTime        @default(now())
+  author    User            @relation("ReviewAuthor", fields: [authorId], references: [id])
+  target    User            @relation("ReviewTarget", fields: [targetId], references: [id])
+
+  @@unique([authorId, orderId, targetId])
+}
+
+// One row per (order, reviewer, target) — created when an order/delivery is
+// completed so the review page knows exactly who still owes a review to whom,
+// without re-deriving it from order relations every time.
+model ReviewRequest {
+  id         String          @id @default(cuid())
+  orderType  ReviewOrderType @default(ORDER)
+  orderId    String
+  userId     String
+  targetId   String
+  targetRole UserRole
+  completed  Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+
+  @@unique([orderId, userId, targetId])
+}
+
+enum ReviewOrderType {
+  ORDER
+  VENDOR_ORDER
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+}
+
+// One row per login attempt — lets us rate-limit/lock out a phone number
+// after repeated failures within a sliding window, independent of whether
+// the account actually exists (avoids leaking account existence via timing).
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  phone     String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model VendorProfile {
+  id            String          @id @default(cuid())
+  userId        String          @unique
+  shopName      String
+  description   String?
+  location      String
+  coverageAreas String[]
+  latitude      Float?
+  longitude     Float?
+  rating        Float           @default(0)
+  totalRatings  Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  orders        VendorOrder[]
+  products      VendorProduct[]
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicles      VendorVehicle[]
+}
+
+model VendorProduct {
+  id          String                @id @default(cuid())
+  vendorId    String
+  name        String
+  category    VendorProductCategory
+  description String?
+  price       Float
+  unit        String
+  stock       Int                   @default(0)
+  images      String[]
+  isAvailable Boolean               @default(true)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  orderItems  VendorOrderItem[]
+  vendor      VendorProfile         @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model VendorOrder {
+  id              String            @id @default(cuid())
+  vendorId        String
+  customerId      String
+  totalAmount     Float
+  status          VendorOrderStatus @default(PENDING)
+  deliveryAddress String?
+  deliveryLat     Float?
+  deliveryLng     Float?
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  delivery        VendorDelivery?
+  customer        User              @relation("CustomerVendorOrders", fields: [customerId], references: [id])
+  vendor          VendorProfile     @relation(fields: [vendorId], references: [id])
+  items           VendorOrderItem[]
+}
+
+model VendorOrderItem {
+  id        String        @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Float
+  subtotal  Float
+  order     VendorOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   VendorProduct @relation(fields: [productId], references: [id])
+}
+
+model VendorVehicle {
+  id           String            @id @default(cuid())
+  vendorId     String
+  vehicleType  VendorVehicleType
+  licensePlate String?
+  driverName   String?
+  driverPhone  String?
+  capacity     Float?
+  isAvailable  Boolean           @default(true)
+  latitude     Float?
+  longitude    Float?
+  lastSeen     DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deliveries   VendorDelivery[]
+  vendor       VendorProfile     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model VendorDelivery {
+  id               String          @id @default(cuid())
+  orderId          String          @unique
+  vehicleId        String?
+  pickupLocation   String
+  deliveryLocation String
+  status           TransportStatus @default(PENDING)
+  estimatedCost    Float?
+  scheduledDate    DateTime?
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  order            VendorOrder     @relation(fields: [orderId], references: [id])
+  vehicle          VendorVehicle?  @relation(fields: [vehicleId], references: [id])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  actorId   String?
+  type      String
+  title     String
+  body      String
+  link      String?
+  entityId  String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  actor     User?    @relation("NotificationActor", fields: [actorId], references: [id])
+  user      User     @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Recommendation {
+  id        String   @id @default(cuid())
+  userId    String?
+  phone     String
+  message   String
+  listings  Json
+  sentAt    DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([sentAt])
+}
+
+model VerificationRequest {
+  id                String         @id @default(cuid())
+  userId            String
+  role              UserRole
+  ghanaCardNumber   String
+  ghanaCardName     String
+  residenceLocation String
+  idPhotoFront      String
+  idPhotoBack       String?
+  fee               Float
+  paymentReference  String         @unique
+  paymentStatus     PaymentStatus  @default(UNPAID)
+  status            ApprovalStatus @default(PENDING)
+  reviewNotes       String?
+  reviewedById      String?
+  reviewedAt        DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  user              User           @relation("VerificationApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy        User?          @relation("VerificationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Gates initial access for anyone who registers directly as ADMIN — unlike
+// VerificationRequest this isn't a paid optional badge, it's a hard requirement
+// before the account can use any admin feature at all.
+model AdminRequest {
+  id               String         @id @default(cuid())
+  userId           String         @unique
+  ghanaCardNumber  String
+  ghanaCardName    String
+  idPhotoFront     String
+  idPhotoBack      String?
+  status           ApprovalStatus @default(PENDING)
+  reviewNotes      String?
+  reviewedById     String?
+  reviewedAt       DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  user             User           @relation("AdminRequestApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy       User?          @relation("AdminRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model UserEvent {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String?
+  type      String
+  data      Json
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Derived/materialized fields — promoted out of `data` for common keys so they're queryable
+  // in SQL directly. `data` is kept as the full-fidelity source (also covers future/unlisted keys).
+  ipFormatted String?
+  placeName   String? // reverse-geocoded from lat/lon, filled in asynchronously after write
+  os          String?
+  deviceType  String?
+  url         String?
+  referrer    String?
+  depth       Int?
+  element     String?
+  elementText String?
+  href        String?
+  trackId     String?
+  accuracy    Float?
+  lat         Float?
+  lon         Float?
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model Complaint {
+  id           String            @id @default(cuid())
+  reporterId   String
+  subject      String
+  category     ComplaintCategory
+  description  String
+  status       ComplaintStatus   @default(OPEN)
+  adminNotes   String?
+  resolvedAt   DateTime?
+  resolvedById String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  reporter     User              @relation("UserComplaints", fields: [reporterId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+  FARMER
+  BUYER
+  LOGISTICS
+  ADMIN
+  VENDOR
+}
+
+enum VendorProductCategory {
+  EQUIPMENT
+  SEEDS
+  FERTILIZERS
+  PESTICIDES
+  TOOLS
+  IRRIGATION
+  ANIMAL_FEED
+  STORAGE
+  OTHER
+}
+
+enum VendorOrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum VendorVehicleType {
+  BUS
+  MINIBUS
+  PICKUP_TRUCK
+  VAN
+}
+
+enum BuyerType {
+  RETAILER
+  RESTAURANT
+  PROCESSOR
+  EXPORTER
+  HOUSEHOLD
+}
+
+enum VehicleType {
+  MOTORBIKE
+}
+
+enum ProduceCategory {
+  VEGETABLES
+  GRAINS
+  TUBERS
+  FRUITS
+  LEGUMES
+  LIVESTOCK
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  EXPIRED
+  DRAFT
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ComplaintCategory {
+  FRAUD
+  QUALITY_ISSUE
+  DELIVERY_PROBLEM
+  PAYMENT_DISPUTE
+  HARASSMENT
+  TECHNICAL
+  OTHER
+}
+
+enum ComplaintStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum OrderFulfillment {
+  PICKUP
+  DELIVERY
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  READY_FOR_PICKUP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  MOBILE_MONEY
+  CASH
+  BANK_TRANSFER
+}
+
+enum TransportStatus {
+  PENDING
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
