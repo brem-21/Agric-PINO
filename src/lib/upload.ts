@@ -1,10 +1,9 @@
-import { writeFile } from "fs/promises";
-import { join } from "path";
+import { v2 as cloudinary } from "cloudinary";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 
-export async function saveUploadedFile(file: File): Promise<string> {
+export async function saveUploadedFile(file: File, folder = "uploads"): Promise<string> {
   if (!ALLOWED.includes(file.type)) {
     throw new Error("Only JPEG, PNG, WebP and AVIF images are allowed");
   }
@@ -15,10 +14,16 @@ export async function saveUploadedFile(file: File): Promise<string> {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  const ext = file.type.split("/")[1].replace("jpeg", "jpg");
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const uploadDir = join(process.cwd(), "public", "uploads");
-  await writeFile(join(uploadDir, filename), buffer);
+  const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: `lorgric/${folder}`, resource_type: "image" },
+      (error, uploadResult) => {
+        if (error || !uploadResult) return reject(error ?? new Error("Cloudinary upload failed"));
+        resolve(uploadResult);
+      }
+    );
+    stream.end(buffer);
+  });
 
-  return `/uploads/${filename}`;
+  return result.secure_url;
 }

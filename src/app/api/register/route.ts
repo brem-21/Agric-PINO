@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     let idPhotoFront: string | undefined;
     if (data.role === "ADMIN" && idPhotoFile instanceof File) {
       try {
-        idPhotoFront = await saveUploadedFile(idPhotoFile);
+        idPhotoFront = await saveUploadedFile(idPhotoFile, "id-verification");
       } catch (error) {
         return NextResponse.json({ error: (error as Error).message }, { status: 400 });
       }
