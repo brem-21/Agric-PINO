@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Lets the dev server accept requests (HMR websocket, server actions) when
+  // reached through the remote box's addresses instead of only localhost.
+  allowedDevOrigins: ["3.252.95.86", "172.31.25.39"],
   async headers() {
     return [
       {
@@ -40,7 +43,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost:3000"],
+      allowedOrigins: ["localhost:3000", "3.252.95.86:3000", "172.31.25.39:3000"],
     },
   },
 };
