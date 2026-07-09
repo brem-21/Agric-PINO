@@ -1,14 +1,23 @@
 import OpenAI from "openai";
 
-// OpenRouter uses the OpenAI SDK but with a different base URL
-const openrouter = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY!,
-  defaultHeaders: {
-    "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-    "X-Title": "Lorgric Northern Ghana",
-  },
-});
+// OpenRouter uses the OpenAI SDK but with a different base URL.
+// Built lazily so importing this module (e.g. during `next build` page-data
+// collection) never requires OPENROUTER_API_KEY — only actually calling it does.
+let client: OpenAI | null = null;
+
+function getClient(): OpenAI {
+  if (!client) {
+    client = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: process.env.OPENROUTER_API_KEY!,
+      defaultHeaders: {
+        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+        "X-Title": "Lorgric Northern Ghana",
+      },
+    });
+  }
+  return client;
+}
 
 export interface RecommendationContext {
   buyerName: string;
@@ -46,7 +55,7 @@ export async function generateRecommendation(ctx: RecommendationContext): Promis
     )
     .join("\n");
 
-  const completion = await openrouter.chat.completions.create({
+  const completion = await getClient().chat.completions.create({
     model: "anthropic/claude-haiku-4-5",
     max_tokens: 400,
     messages: [
@@ -79,7 +88,7 @@ export async function generateFarmerInsight(params: {
   ordersCount: number;
   weather: string;
 }): Promise<string> {
-  const completion = await openrouter.chat.completions.create({
+  const completion = await getClient().chat.completions.create({
     model: "anthropic/claude-haiku-4-5",
     max_tokens: 200,
     messages: [

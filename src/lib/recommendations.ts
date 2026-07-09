@@ -2,14 +2,23 @@ import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { sendRecommendationSMS } from "@/lib/mnotify";
 
-const openrouter = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY!,
-  defaultHeaders: {
-    "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-    "X-Title": "Lorgric",
-  },
-});
+// Built lazily so importing this module (e.g. during `next build` page-data
+// collection) never requires OPENROUTER_API_KEY — only actually calling it does.
+let client: OpenAI | null = null;
+
+function getClient(): OpenAI {
+  if (!client) {
+    client = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: process.env.OPENROUTER_API_KEY!,
+      defaultHeaders: {
+        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+        "X-Title": "Lorgric",
+      },
+    });
+  }
+  return client;
+}
 
 async function buildUserContext(userId: string) {
   const [user, recentEvents, recentOrders] = await Promise.all([
@@ -200,7 +209,7 @@ Respond ONLY with valid JSON in this exact shape:
   "message": "the full SMS text to send"
 }`;
 
-  const response = await openrouter.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: "openai/gpt-4o",
     messages: [{ role: "user", content: prompt }],
     temperature: 0.4,
