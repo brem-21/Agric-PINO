@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
 
     const reference = generatePaymentReference(requestId);
     const email = request.requester.email ?? `${request.requester.phone}@lorgric.app`;
-    const origin = new URL(req.url).origin;
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
     const result = await initializePayment({
       email,

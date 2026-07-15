@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     const reference = `VERIFY-${user.id}-${Date.now()}`;
     const email = user.email ?? `${user.phone}@lorgric.app`;
-    const origin = new URL(req.url).origin;
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
     const request = await prisma.verificationRequest.create({
       data: {

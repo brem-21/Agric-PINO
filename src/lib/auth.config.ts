@@ -3,6 +3,11 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig: NextAuthConfig = {
+  // Auth.js validates the incoming request's Host header against its own
+  // trusted-host check, independent of NEXTAUTH_URL — without this it rejects
+  // any host that isn't what it auto-detects as "trusted" (e.g. a bare EC2
+  // IP), throwing UntrustedHost even when NEXTAUTH_URL is set correctly.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/auth/login",

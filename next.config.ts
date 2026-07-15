@@ -45,6 +45,11 @@ const nextConfig: NextConfig = {
     serverActions: {
       allowedOrigins: ["localhost:3000", "3.252.95.86:3000", "172.31.25.39:3000"],
     },
+    // Next's internal proxy layer buffers/clones every request body in memory
+    // before it reaches route handlers; the implicit default silently stalls
+    // requests larger than it can hold instead of erroring. Set explicitly,
+    // comfortably above the largest upload we allow (upload.ts caps at 5MB).
+    proxyClientMaxBodySize: "20mb",
   },
 };
 

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { compressImage } from "@/lib/compress-image";
 
 interface VerificationRequest {
   id: string;
@@ -35,10 +36,14 @@ const AGREEMENT_POINTS = [
 ];
 
 async function uploadFile(file: File): Promise<string> {
+  const compressed = await compressImage(file);
   const fd = new FormData();
-  fd.append("file", file);
+  fd.append("file", compressed);
   const res = await fetch("/api/upload", { method: "POST", body: fd });
-  if (!res.ok) throw new Error("Upload failed");
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error ?? "Upload failed");
+  }
   const { url } = await res.json();
   return url;
 }
@@ -93,8 +98,8 @@ export default function VerificationPage() {
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Submission failed"); setStep("form"); return; }
       window.location.href = data.authorizationUrl;
-    } catch {
-      setError("Network error. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error. Please try again.");
       setStep("form");
     }
   }

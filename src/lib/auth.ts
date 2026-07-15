@@ -80,6 +80,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.isVerified = u.isVerified ?? false;
         token.isVendor = u.isVendor ?? false;
         token.verifiedAt = u.verifiedAt ?? null;
+      } else if (token.id) {
+        // Re-check on every request (not just at sign-in) so admin actions —
+        // verification approval, role changes — take effect immediately
+        // instead of requiring the user to log out and back in.
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, isVerified: true, isVendor: true, verifiedAt: true },
+        });
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.isVerified = dbUser.isVerified;
+          token.isVendor = dbUser.isVendor;
+          token.verifiedAt = dbUser.verifiedAt?.toISOString() ?? null;
+        }
       }
       // Allow client-side session.update() to refresh the image
       if (trigger === "update" && updatedSession?.image !== undefined) {
