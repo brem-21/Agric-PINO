@@ -9,14 +9,14 @@ const reviewSchema = z.object({
   targetId: z.string(),
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(500).optional(),
-  orderType: z.enum(["ORDER", "VENDOR_ORDER"]).default("ORDER"),
+  orderType: z.enum(["ORDER"]).default("ORDER"),
 });
 
-const PROFILE_BY_ROLE: Record<UserRole, "farmerProfile" | "buyerProfile" | "logisticsProfile" | "vendorProfile" | null> = {
+const PROFILE_BY_ROLE: Record<UserRole, "farmerProfile" | "buyerProfile" | "logisticsProfile" | "storageFacilityProfile" | null> = {
   FARMER: "farmerProfile",
   BUYER: "buyerProfile",
   LOGISTICS: "logisticsProfile",
-  VENDOR: "vendorProfile",
+  STORAGE_FACILITY: "storageFacilityProfile",
   ADMIN: null,
 };
 
@@ -59,8 +59,8 @@ export async function POST(req: NextRequest) {
       await prisma.buyerProfile.updateMany({ where: { userId: targetId }, data: { rating: avgRating, totalRatings: allReviews.length } });
     } else if (profileField === "logisticsProfile") {
       await prisma.logisticsProfile.updateMany({ where: { userId: targetId }, data: { rating: avgRating, totalRatings: allReviews.length } });
-    } else if (profileField === "vendorProfile") {
-      await prisma.vendorProfile.updateMany({ where: { userId: targetId }, data: { rating: avgRating, totalRatings: allReviews.length } });
+    } else if (profileField === "storageFacilityProfile") {
+      await prisma.storageFacilityProfile.updateMany({ where: { userId: targetId }, data: { rating: avgRating, totalRatings: allReviews.length } });
     }
 
     await prisma.reviewRequest.update({

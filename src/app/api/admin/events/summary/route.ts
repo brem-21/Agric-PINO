@@ -5,7 +5,7 @@ import { resolveRange } from "@/lib/analytics-range";
 import type { Prisma } from "@prisma/client";
 
 const TOP_LOCATIONS = 6;
-const ROLES = ["FARMER", "BUYER", "LOGISTICS", "VENDOR", "ADMIN"] as const;
+const ROLES = ["FARMER", "BUYER", "LOGISTICS", "STORAGE_FACILITY", "ADMIN"] as const;
 
 function previousWindow(from: Date, to: Date): { from: Date; to: Date } {
   const durationMs = to.getTime() - from.getTime();

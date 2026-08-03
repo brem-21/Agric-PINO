@@ -39,7 +39,7 @@ const ROLE_BADGE: Record<string, string> = {
   FARMER: "bg-[#eeeee9] text-[#1c3a13]",
   BUYER: "bg-[#eeeee9] text-[#1c3a13]",
   LOGISTICS: "bg-[#eeeee9] text-[#1c3a13]",
-  VENDOR: "bg-[#eeeee9] text-[#1c3a13]",
+  STORAGE_FACILITY: "bg-[#eeeee9] text-[#1c3a13]",
 };
 
 interface Complaint {

@@ -7,7 +7,7 @@ import {
   Truck,
   MapPin,
   ShoppingCart,
-  Wrench,
+  Warehouse,
   HandCoins,
   ShieldCheck,
   Handshake,
@@ -20,7 +20,7 @@ import { getPlatformStats } from "@/lib/platform-stats";
 export const metadata: Metadata = {
   title: "About — Lorgric",
   description:
-    "Lorgric connects smallholder farmers in Ghana's Northern Savannah Zone directly with buyers, delivery riders, and equipment vendors — cutting out middlemen and post-harvest waste.",
+    "Lorgric exists to reduce post-harvest losses in Ghana's Northern Savannah Zone — starting with tomato farmers in the Upper East Region — connecting them directly with wholesalers, processors, delivery riders, and cold-chain storage facilities before produce spoils.",
 };
 
 const ROLES = [
@@ -28,25 +28,25 @@ const ROLES = [
     icon: Leaf,
     title: "Farmers",
     description:
-      "List your harvest with photos, quantity, and price. Reach buyers directly instead of relying on middlemen, and get paid fairly for what you grow.",
+      "List your harvest the day it's picked, or book a drop-off at a nearby storage facility, and reach a wholesaler or processor directly — no more selling within hours of harvest at whatever price is offered.",
   },
   {
     icon: ShoppingCart,
     title: "Buyers",
     description:
-      "Browse fresh produce by crop, price, and location. Order directly from the farm and track your delivery from pickup to doorstep.",
+      "Wholesalers, processors, and retailers browse produce by crop, price, location — and how soon it needs to sell. Order directly, or from a storage facility, and track delivery from pickup to doorstep.",
   },
   {
     icon: Truck,
     title: "Delivery Riders",
     description:
-      "Pick up available transport jobs in your area, get paid per delivery, and build a rating that brings you more work over time.",
+      "Move produce fast over Northern Ghana's feeder roads — the single biggest cause of bruising and spoilage in transit — and get paid per job.",
   },
   {
-    icon: Wrench,
-    title: "Equipment Vendors",
+    icon: Warehouse,
+    title: "Storage Facilities",
     description:
-      "Sell seeds, fertilizer, and farm equipment straight to the farmers who need them, with your own storefront and delivery fleet.",
+      "Operate a cold-chain or hermetic dry storage site. Take farmer drop-off bookings, hold produce until a buyer is found, and earn a 5% commission on every sale.",
   },
 ];
 
@@ -58,8 +58,8 @@ const VALUES = [
   },
   {
     icon: Handshake,
-    title: "Direct connections",
-    description: "Farmers, buyers, riders, and vendors deal with each other directly, not through a broker.",
+    title: "Speed over spoilage",
+    description: "Every workflow is built to shorten the time between harvest and sale — the single biggest lever against post-harvest loss.",
   },
   {
     icon: ShieldCheck,
@@ -93,14 +93,17 @@ export default async function AboutPage() {
               <span>Northern Savannah Zone — Ghana</span>
             </div>
             <h1 className="text-4xl sm:text-5xl font-light text-[#fcfcf7] tracking-tight mb-6 leading-tight">
-              Built for the people who
+              A platform built to
               <br />
-              <span className="text-[#d3fa99]">grow, buy, and move</span> food
+              <span className="text-[#d3fa99]">stop the harvest from rotting</span>
             </h1>
             <p className="text-lg text-[#fcfcf7]/70 max-w-2xl mx-auto">
-              Lorgric is a farm-to-market platform connecting smallholder farmers across
-              Northern Ghana directly with buyers, delivery riders, and equipment vendors —
-              no middlemen, no guesswork.
+              We&apos;re helping tomato farmers in Ghana&apos;s Upper East Region reach
+              wholesalers and processors before their harvest spoils — by storing it at
+              nearby cold-chain facilities instead of selling within hours of harvest at
+              whatever price is offered. The same model extends to grain farmers across
+              the Northern Savannah Zone, with hermetic dry storage and delivery riders
+              connecting them directly to buyers too.
             </p>
           </ScrollReveal>
         </section>
@@ -113,13 +116,18 @@ export default async function AboutPage() {
                 The problem we set out to fix
               </h2>
               <p className="text-[#1c3a13]/70 leading-relaxed">
-                Ghana loses an estimated 20–50% of fruits and vegetables after harvest —
-                produce that spoils before it ever reaches a buyer. At the same time, smallholder
-                farmers in the Northern Savannah Zone are often forced to sell to middlemen at a
-                fraction of market value, simply because they have no direct way to reach buyers
-                or arrange reliable transport. Lorgric exists to close that gap: a single place
-                where a farmer can list produce, a buyer can order it, and a rider can deliver it
-                — before it spoils, at a fair price, for everyone involved.
+                Smallholder farmers in Northern Ghana lose an estimated 10–50% of every
+                harvest before it reaches a consumer — costing the country roughly US$1.9
+                billion a year (APHLIS, WFP). It isn&apos;t poor farming that causes this:
+                it&apos;s poor storage, damaged feeder roads, no cold chain, and — the single
+                biggest factor farmers and traders report — no ready market to sell into
+                before produce spoils. A study of the Upper East tomato value chain found
+                losses compounding at every stage: ~10–13% on the farm, 26% with
+                wholesalers, 20% at retail. Lorgric exists to close that gap: a farmer books
+                a drop-off at a nearby storage facility instead of selling immediately, the
+                facility holds the produce until a wholesaler or processor buys it, and
+                everyone — farmer, facility, buyer — comes out ahead of what today&apos;s
+                sell-it-now-or-lose-it market offers.
               </p>
             </ScrollReveal>
           </div>
@@ -229,7 +237,7 @@ export default async function AboutPage() {
           </span>
         </div>
         <p className="text-[#fcfcf7]/50">
-          Connecting Northern Ghana&apos;s Farmers, Buyers &amp; Logistics — reducing waste, growing livelihoods.
+          Fighting post-harvest loss in Northern Ghana — connecting farmers, buyers, riders &amp; storage facilities.
         </p>
         <p className="mt-2 text-[#fcfcf7]/40">
           © {new Date().getFullYear()} Lorgric. Northern Savannah Zone, Ghana.

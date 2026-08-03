@@ -14,6 +14,13 @@ async function main() {
   const hashedPassword = await bcrypt.hash("password123", 12);
   const verifiedAt = new Date("2026-01-15");
 
+  // Relative to the seed run, not a fixed calendar date — so re-running this
+  // seed months from now doesn't leave every demo listing looking already
+  // expired-and-unsold (which would show as a misleadingly ~100% post-harvest
+  // loss on the farmer dashboard purely from stale seed dates, not real data).
+  const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+  const daysFromNow = (n: number) => new Date(Date.now() + n * 24 * 60 * 60 * 1000);
+
   // Online/away thresholds
   const online = new Date(Date.now() - 60 * 1000);       // 1 min ago
   const online2 = new Date(Date.now() - 90 * 1000);      // 90s ago
@@ -129,8 +136,8 @@ async function main() {
       buyerProfile: {
         create: {
           businessName: "Grace Fresh Market",
-          businessType: "RETAILER",
-          description: "Fresh produce retailer at Tamale Central Market",
+          businessType: "WHOLESALER",
+          description: "Buys in bulk from farmers and storage facilities for resale to Tamale-area retailers",
           rating: 4.3,
           totalRatings: 12,
         },
@@ -324,8 +331,8 @@ async function main() {
           "https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=800&q=80",
 
         ],
-        harvestDate: new Date("2026-06-28"),
-        expiryDate: new Date("2026-07-30"),
+        harvestDate: daysAgo(6),
+        expiryDate: daysFromNow(4),
         location: "Tamale, Northern Region",
         latitude: 9.4008,
         longitude: -0.8393,
@@ -343,8 +350,8 @@ async function main() {
         images: [
           "https://images.unsplash.com/photo-1690487966073-f2ba29a7eb7c?w=800&q=80",
         ],
-        harvestDate: new Date("2026-06-30"),
-        expiryDate: new Date("2026-07-30"),
+        harvestDate: daysAgo(10),
+        expiryDate: daysFromNow(20),
         location: "Tamale, Northern Region",
         latitude: 9.4008,
         longitude: -0.8393,
@@ -363,8 +370,8 @@ async function main() {
           "https://images.unsplash.com/photo-1759860002366-0d8dd828742c?w=800&q=80",
 
         ],
-        harvestDate: new Date("2026-07-01"),
-        expiryDate: new Date("2026-07-30"),
+        harvestDate: daysAgo(8),
+        expiryDate: daysFromNow(15),
         location: "Bolgatanga, Upper East Region",
         latitude: 10.7856,
         longitude: -0.8494,
@@ -383,8 +390,8 @@ async function main() {
           "https://images.unsplash.com/photo-1601648764658-cf37e8c89b70?w=800&q=80",
 
         ],
-        harvestDate: new Date("2026-06-29"),
-        expiryDate: new Date("2026-07-30"),
+        harvestDate: daysAgo(9),
+        expiryDate: daysFromNow(2),
         location: "Bolgatanga, Upper East Region",
         latitude: 10.7856,
         longitude: -0.8494,
@@ -403,8 +410,8 @@ async function main() {
           "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Yam_at_monday_market_kaduna_state_01.jpg/960px-Yam_at_monday_market_kaduna_state_01.jpg",
 
         ],
-        harvestDate: new Date("2026-06-25"),
-        expiryDate: new Date("2026-08-25"),
+        harvestDate: daysAgo(40),
+        expiryDate: daysFromNow(60),
         location: "Wa, Upper West Region",
         latitude: 10.0608,
         longitude: -2.5012,
@@ -422,8 +429,8 @@ async function main() {
         images: [
           "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Guinea_corn_at_monday_market_kaduna_state_01.jpg/960px-Guinea_corn_at_monday_market_kaduna_state_01.jpg",
         ],
-        harvestDate: new Date("2026-06-20"),
-        expiryDate: new Date("2026-12-20"),
+        harvestDate: daysAgo(45),
+        expiryDate: daysFromNow(180),
         location: "Wa, Upper West Region",
         latitude: 10.0608,
         longitude: -2.5012,
@@ -454,283 +461,160 @@ async function main() {
   void buyer1;
   void logistics1;
 
-  // ── Vendor 1: AgroSupplies Ghana (Tamale) ─────────────────────────────────
-  const vendor1 = await prisma.user.upsert({
+  // ── Storage Facility 1: Bolgatanga Cold Storage (Upper East Region) ──────
+  // The flagship facility — cold-chain storage for the tomato/vegetable
+  // corridor this platform is built around (see Anaba, 2018, Upper East
+  // tomato value chain post-harvest loss study).
+  const facility1 = await prisma.user.upsert({
     where: { phone: "0244000030" },
     update: {},
     create: {
       name: "Kwame Darko",
       phone: "0244000030",
       password: hashedPassword,
-      role: "VENDOR",
-      isVendor: true,
-      region: "Northern",
-      district: "Tamale Metropolitan",
+      role: "STORAGE_FACILITY",
+      region: "Upper East Region",
+      district: "Bolgatanga Municipal",
       ghanaCardNumber: "GHA-900000030-0",
       ghanaCardName: "Kwame Darko",
-      residenceLocation: "Tamale, Northern Region",
+      residenceLocation: "Bolgatanga, Upper East Region",
       isVerified: true,
       verifiedAt: new Date("2026-01-05"),
-      latitude: 9.4075,
-      longitude: -0.8533,
+      latitude: 10.7830,
+      longitude: -0.8520,
       lastSeen: away2,
-      vendorProfile: {
+      storageFacilityProfile: {
         create: {
-          shopName: "AgroSupplies Ghana",
-          description: "Your one-stop shop for quality farm equipment and inputs in Northern Ghana",
-          location: "Tamale, Northern Region",
-          coverageAreas: ["Northern Region", "Upper East Region", "Upper West Region"],
-          latitude: 9.4075,
-          longitude: -0.8533,
-          products: {
-            create: [
-              {
-                name: "NPK 15-15-15 Fertilizer",
-                category: "FERTILIZERS",
-                description: "Balanced compound fertilizer suitable for all crops. 50kg bag.",
-                price: 320,
-                unit: "bag (50kg)",
-                stock: 200,
-                images: [
-                  "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/DAP_%28Diammonium_Phosphate%29_Granules_%283%29.jpg/960px-DAP_%28Diammonium_Phosphate%29_Granules_%283%29.jpg",
-                ],
-                isAvailable: true,
-              },
-              {
-                name: "Hybrid Maize Seeds (OPV)",
-                category: "SEEDS",
-                description: "Open-pollinated high-yield maize variety adapted to savannah zone.",
-                price: 85,
-                unit: "kg",
-                stock: 500,
-                images: [
-                  "https://images.unsplash.com/photo-1536510986879-cdc0659c3ea3?w=800&q=80",
-                ],
-                isAvailable: true,
-              },
-              {
-                name: "Knapsack Hand Sprayer 16L",
-                category: "TOOLS",
-                description: "Durable manual sprayer for pesticide and herbicide application.",
-                price: 180,
-                unit: "unit",
-                stock: 50,
-                images: [
-                  "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Knapsack_sprayer.jpg/960px-Knapsack_sprayer.jpg",
-                ],
-                isAvailable: true,
-              },
-              {
-                name: "Glyphosate Herbicide 1L",
-                category: "PESTICIDES",
-                description: "Non-selective systemic herbicide for weed control before planting.",
-                price: 45,
-                unit: "litre",
-                stock: 300,
-                images: [
-                  "https://images.unsplash.com/photo-1749030417784-f8abf669dd41?w=800&q=80",
-                ],
-                isAvailable: true,
-              },
-              {
-                name: "Petrol Water Pump 3-inch",
-                category: "IRRIGATION",
-                description: "High-flow petrol water pump for irrigation. Self-priming up to 8m.",
-                price: 1200,
-                unit: "unit",
-                stock: 15,
-                images: [
-                  "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Water_Pump_watering_cultivating_fields.JPG/960px-Water_Pump_watering_cultivating_fields.JPG",
-                ],
-                isAvailable: true,
-              },
-              {
-                name: "Jab Planter (Manual Seed Dibbler)",
-                category: "TOOLS",
-                description: "Manual jab planter for quick and uniform seed placement.",
-                price: 95,
-                unit: "unit",
-                stock: 80,
-                images: [
-                  "https://images.unsplash.com/photo-1642952273588-ed6fa28870ac?w=800&q=80",
-                ],
-                isAvailable: true,
-              },
-            ],
-          },
-          vehicles: {
-            create: [
-              {
-                vehicleType: "MINIBUS",
-                licensePlate: "NR-7823-21",
-                driverName: "Alidu Seidu",
-                driverPhone: "0557000031",
-                capacity: 1500,
-                isAvailable: true,
-                latitude: 9.4150,
-                longitude: -0.8410,
-                lastSeen: online2,
-              },
-              {
-                vehicleType: "PICKUP_TRUCK",
-                licensePlate: "NR-3341-23",
-                driverName: "Issaka Mohammed",
-                driverPhone: "0557000032",
-                capacity: 800,
-                isAvailable: true,
-                latitude: 9.4022,
-                longitude: -0.8601,
-                lastSeen: away,
-              },
-            ],
-          },
+          name: "Bolgatanga Cold Storage",
+          description: "Cold-chain storage for tomatoes and perishable vegetables serving the Upper East tomato corridor.",
+          location: "Bolgatanga, Upper East Region",
+          latitude: 10.7830,
+          longitude: -0.8520,
+          storageTypes: ["COLD_CHAIN"],
+          capacityTonnes: 40,
+          acceptedCategories: ["VEGETABLES", "FRUITS"],
+          operatingHours: "Mon–Sat 7am–6pm",
+          approvalStatus: "APPROVED",
+          rating: 4.6,
+          totalRatings: 19,
         },
       },
     },
   });
 
-  // Refresh vehicle lastSeen on every run (upsert only creates, doesn't update nested)
-  await prisma.vendorVehicle.updateMany({
-    where: { licensePlate: "NR-7823-21" },
-    data: { lastSeen: online2, latitude: 9.4150, longitude: -0.8410 },
-  });
-  await prisma.vendorVehicle.updateMany({
-    where: { licensePlate: "NR-3341-23" },
-    data: { lastSeen: away, latitude: 9.4022, longitude: -0.8601 },
-  });
-
-  // Patch product images for AgroSupplies Ghana
-  const productImageMapV1: [string, string[]][] = [
-    ["NPK 15-15-15 Fertilizer", ["https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/DAP_%28Diammonium_Phosphate%29_Granules_%283%29.jpg/960px-DAP_%28Diammonium_Phosphate%29_Granules_%283%29.jpg"]],
-    ["Hybrid Maize Seeds (OPV)", ["https://images.unsplash.com/photo-1536510986879-cdc0659c3ea3?w=800&q=80"]],
-    ["Knapsack Hand Sprayer 16L", ["https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Knapsack_sprayer.jpg/960px-Knapsack_sprayer.jpg"]],
-    ["Glyphosate Herbicide 1L", ["https://images.unsplash.com/photo-1749030417784-f8abf669dd41?w=800&q=80"]],
-    ["Petrol Water Pump 3-inch", ["https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Water_Pump_watering_cultivating_fields.JPG/960px-Water_Pump_watering_cultivating_fields.JPG"]],
-    ["Jab Planter (Manual Seed Dibbler)", ["https://images.unsplash.com/photo-1642952273588-ed6fa28870ac?w=800&q=80"]],
-  ];
-  for (const [name, images] of productImageMapV1) {
-    await prisma.vendorProduct.updateMany({ where: { name }, data: { images } });
-  }
-
-  void vendor1;
-
-  // ── Vendor 2: Savannah Transport Co (Bolgatanga) ──────────────────────────
-  const vendor2 = await prisma.user.upsert({
+  // ── Storage Facility 2: Tamale Grain Reserve (Northern Region) ────────────
+  // Hermetic/dry (PICS-bag style) storage for grains and legumes.
+  const facility2 = await prisma.user.upsert({
     where: { phone: "0244000031" },
     update: {},
     create: {
       name: "Abena Fordjour",
       phone: "0244000031",
       password: hashedPassword,
-      role: "VENDOR",
-      isVendor: true,
-      region: "Upper East",
-      district: "Bolgatanga Municipal",
+      role: "STORAGE_FACILITY",
+      region: "Northern Region",
+      district: "Tamale Metropolitan",
       ghanaCardNumber: "GHA-900000031-1",
       ghanaCardName: "Abena Fordjour",
-      residenceLocation: "Bolgatanga, Upper East Region",
+      residenceLocation: "Tamale, Northern Region",
       isVerified: true,
       verifiedAt: new Date("2026-02-10"),
-      latitude: 10.7830,
-      longitude: -0.8520,
+      latitude: 9.4075,
+      longitude: -0.8533,
       lastSeen: online,
-      vendorProfile: {
+      storageFacilityProfile: {
         create: {
-          shopName: "Savannah Transport Co",
-          description: "Bulk produce transport serving all routes across the Northern Savannah Zone",
-          location: "Bolgatanga, Upper East Region",
-          coverageAreas: ["Upper East Region", "Northern Region", "Upper West Region"],
-          latitude: 10.7830,
-          longitude: -0.8520,
-          products: {
-            create: [
-              {
-                name: "Transport Insurance (Perishables)",
-                category: "OTHER",
-                description: "One-trip cargo insurance for perishable produce. Valid 24h.",
-                price: 50,
-                unit: "trip",
-                stock: 999,
-                images: [
-                  "https://images.unsplash.com/photo-1506306460327-3164753b74c7?w=800&q=80",
-                ],
-                isAvailable: true,
-              },
-              {
-                name: "Produce Crates (40L)",
-                category: "TOOLS",
-                description: "Reusable plastic crates for safe produce transport.",
-                price: 25,
-                unit: "crate",
-                stock: 200,
-                images: [
-                  "https://images.unsplash.com/photo-1671528443118-fae6bf05e60d?w=800&q=80",
-                ],
-                isAvailable: true,
-              },
-            ],
-          },
-          vehicles: {
-            create: [
-              {
-                vehicleType: "BUS",
-                licensePlate: "UER-1190-20",
-                driverName: "Kofi Asare",
-                driverPhone: "0557000041",
-                capacity: 4000,
-                isAvailable: true,
-                latitude: 10.7910,
-                longitude: -0.8470,
-                lastSeen: online,
-              },
-              {
-                vehicleType: "VAN",
-                licensePlate: "UER-2234-22",
-                driverName: "Fatima Yakubu",
-                driverPhone: "0557000042",
-                capacity: 600,
-                isAvailable: true,
-                latitude: 10.7780,
-                longitude: -0.8580,
-                lastSeen: away2,
-              },
-              {
-                vehicleType: "PICKUP_TRUCK",
-                licensePlate: "UER-4401-24",
-                driverName: "Baba Alhassan",
-                driverPhone: "0557000043",
-                capacity: 900,
-                isAvailable: true,
-                latitude: 10.7860,
-                longitude: -0.8500,
-                lastSeen: null, // offline for test variety
-              },
-            ],
-          },
+          name: "Tamale Grain Reserve",
+          description: "Hermetic dry storage (PICS-bag style) for grains and legumes across Northern Region.",
+          location: "Tamale, Northern Region",
+          latitude: 9.4075,
+          longitude: -0.8533,
+          storageTypes: ["HERMETIC_DRY"],
+          capacityTonnes: 120,
+          acceptedCategories: ["GRAINS", "LEGUMES", "TUBERS"],
+          operatingHours: "Mon–Fri 8am–5pm",
+          approvalStatus: "APPROVED",
+          rating: 4.4,
+          totalRatings: 11,
         },
       },
     },
   });
 
-  // Refresh Savannah Transport Co vehicles on every run
-  await prisma.vendorVehicle.updateMany({
-    where: { licensePlate: "UER-1190-20" },
-    data: { lastSeen: online, latitude: 10.7910, longitude: -0.8470 },
-  });
-  await prisma.vendorVehicle.updateMany({
-    where: { licensePlate: "UER-2234-22" },
-    data: { lastSeen: away2, latitude: 10.7780, longitude: -0.8580 },
-  });
-  await prisma.vendorVehicle.updateMany({
-    where: { licensePlate: "UER-4401-24" },
-    data: { lastSeen: null },
-  });
+  const bolgatangaFacility = await prisma.storageFacilityProfile.findUniqueOrThrow({ where: { userId: facility1.id } });
+  const tamaleFacility = await prisma.storageFacilityProfile.findUniqueOrThrow({ where: { userId: facility2.id } });
 
-  // Patch product images for Savannah Transport Co
-  await prisma.vendorProduct.updateMany({ where: { name: "Transport Insurance (Perishables)" }, data: { images: ["https://images.unsplash.com/photo-1506306460327-3164753b74c7?w=800&q=80"] } });
-  await prisma.vendorProduct.updateMany({ where: { name: "Produce Crates (40L)" }, data: { images: ["https://images.unsplash.com/photo-1671528443118-fae6bf05e60d?w=800&q=80"] } });
+  // Demo booking 1: Amina's tomatoes already dropped off and auto-listed for
+  // sale through Bolgatanga Cold Storage — the "storage facility in the loop"
+  // flow this platform is built around, at the DROPPED_OFF end of the lifecycle.
+  const existingDropoffBooking = await prisma.storageBooking.findFirst({
+    where: { facilityId: bolgatangaFacility.id, farmerId: farmer2.id, cropType: "Tomatoes" },
+  });
+  if (!existingDropoffBooking) {
+    const storedTomatoListing = await prisma.produceListing.create({
+      data: {
+        farmerId: farmer2.id,
+        cropType: "Tomatoes",
+        category: "VEGETABLES",
+        quantity: 400,
+        unit: "kg",
+        pricePerUnit: 14,
+        currency: "GHS",
+        description: "Roma tomatoes held in cold storage at Bolgatanga Cold Storage — ready for bulk pickup.",
+        images: ["https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=800&q=80"],
+        harvestDate: daysAgo(6),
+        expiryDate: daysFromNow(14),
+        location: bolgatangaFacility.location,
+        latitude: bolgatangaFacility.latitude,
+        longitude: bolgatangaFacility.longitude,
+        status: "ACTIVE",
+        approvalStatus: "APPROVED",
+        storageFacilityId: bolgatangaFacility.id,
+      },
+    });
 
-  void vendor2;
+    await prisma.storageBooking.create({
+      data: {
+        facilityId: bolgatangaFacility.id,
+        farmerId: farmer2.id,
+        listingId: storedTomatoListing.id,
+        cropType: "Tomatoes",
+        category: "VEGETABLES",
+        quantity: 400,
+        unit: "kg",
+        pricePerUnit: 14,
+        scheduledDropoff: daysAgo(6),
+        status: "DROPPED_OFF",
+        confirmedAt: daysAgo(7),
+        droppedOffAt: daysAgo(6),
+      },
+    });
+  }
+
+  // Demo booking 2: Yakubu's sorghum confirmed for drop-off at the grain
+  // reserve but not yet delivered — the earlier, CONFIRMED stage of the pipeline.
+  const existingConfirmedBooking = await prisma.storageBooking.findFirst({
+    where: { facilityId: tamaleFacility.id, farmerId: farmer3.id, cropType: "Sorghum" },
+  });
+  if (!existingConfirmedBooking) {
+    await prisma.storageBooking.create({
+      data: {
+        facilityId: tamaleFacility.id,
+        farmerId: farmer3.id,
+        cropType: "Sorghum",
+        category: "GRAINS",
+        quantity: 1000,
+        unit: "kg",
+        pricePerUnit: 3.5,
+        scheduledDropoff: daysFromNow(3),
+        status: "CONFIRMED",
+        confirmedAt: daysAgo(2),
+      },
+    });
+  }
+
+  void facility1;
+  void facility2;
 
   // ── Admin user ────────────────────────────────────────────────────────────
   await prisma.user.upsert({
@@ -763,16 +647,16 @@ Demo accounts (password: password123):
   Farmer 1:   0244000001  (Kofi Mensah — verified ✓, Tamale)
   Farmer 2:   0244000002  (Amina Issahaku — verified ✓, Bolgatanga)
   Farmer 3:   0244000003  (Yakubu Alhassan, Wa)
-  Buyer 1:    0244000010  (Grace Agyemang — verified ✓)
-  Buyer 2:    0244000011  (Ibrahim Kwesi)
+  Buyer 1:    0244000010  (Grace Agyemang — verified ✓, Wholesaler)
+  Buyer 2:    0244000011  (Ibrahim Kwesi — Restaurant)
   Rider 1:    0244000020  (Abdul Razak — ONLINE, Tamale)
   Rider 2:    0244000021  (Fuseini Dauda — AWAY, Tamale)
   Rider 3:    0244000022  (Mariama Sumaila — OFFLINE, Tamale)
   Rider 4:    0244000023  (Shaibu Alidu — ONLINE, Bolgatanga)
-  Vendor 1:   0244000030  (Kwame Darko — AgroSupplies Ghana, Tamale)
-                           Vehicles: MINIBUS (online), PICKUP_TRUCK (away)
-  Vendor 2:   0244000031  (Abena Fordjour — Savannah Transport Co, Bolgatanga)
-                           Vehicles: BUS (online), VAN (away), PICKUP_TRUCK (offline)
+  Storage 1:  0244000030  (Kwame Darko — Bolgatanga Cold Storage, Upper East)
+                           Amina's tomatoes are already dropped off & listed here
+  Storage 2:  0244000031  (Abena Fordjour — Tamale Grain Reserve, Northern)
+                           Yakubu's sorghum has a CONFIRMED drop-off booking here
   Admin:      0244000099  (Lorgric Admin)
   `);
 }

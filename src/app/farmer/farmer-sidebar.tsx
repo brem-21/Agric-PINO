@@ -14,8 +14,7 @@ import {
   Menu,
   X,
   ChevronRight,
-  Store,
-  History,
+  Warehouse,
   AlertTriangle,
 } from "lucide-react";
 import { SignOutButton } from "@/components/shared/signout-button";
@@ -30,8 +29,7 @@ const NAV_ITEMS = [
   { href: "/farmer/orders", label: "Orders", icon: ShoppingCart },
   { href: "/farmer/transport", label: "Transport", icon: Truck },
   { href: "/find-rider", label: "Find Delivery", icon: Truck },
-  { href: "/equipment", label: "Equipment Shop", icon: Store },
-  { href: "/farmer/purchases", label: "My Purchases", icon: History },
+  { href: "/farmer/storage", label: "Storage Facilities", icon: Warehouse },
   { href: "/farmer/messages", label: "Messages", icon: MessageSquare },
   { href: "/farmer/complaints", label: "Report Incident", icon: AlertTriangle },
 ];

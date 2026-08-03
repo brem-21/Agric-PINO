@@ -8,7 +8,7 @@ const { auth } = NextAuth(authConfig);
 // unmatched paths 404 for anonymous visitors instead of bouncing to login.
 // /delivery has no auth check of its own (it renders PII straight from the
 // order id with no session gate), so it stays behind this list too.
-const PROTECTED_PREFIXES = ["/farmer", "/buyer", "/logistics", "/admin", "/vendor", "/delivery"];
+const PROTECTED_PREFIXES = ["/farmer", "/buyer", "/logistics", "/admin", "/storage", "/delivery"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -33,11 +33,8 @@ export default auth((req) => {
     // who applied for admin checks their application status.
     if (pathname.startsWith("/admin") && pathname !== "/admin/pending" && role !== "ADMIN")
       return Response.redirect(new URL("/unauthorized", req.url));
-    if (pathname.startsWith("/vendor")) {
-      const isVendor = (req.auth?.user as { isVendor?: boolean } | undefined)?.isVendor;
-      if (role !== "VENDOR" && role !== "ADMIN" && !isVendor)
-        return Response.redirect(new URL("/unauthorized", req.url));
-    }
+    if (pathname.startsWith("/storage") && role !== "STORAGE_FACILITY" && role !== "ADMIN")
+      return Response.redirect(new URL("/unauthorized", req.url));
   }
 });
 

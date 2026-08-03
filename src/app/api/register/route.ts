@@ -9,7 +9,7 @@ const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   phone: z.string().min(10, "Valid Ghana phone number required"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(["FARMER", "BUYER", "LOGISTICS", "VENDOR", "ADMIN"]),
+  role: z.enum(["FARMER", "BUYER", "LOGISTICS", "STORAGE_FACILITY", "ADMIN"]),
   region: z.string().min(1, "Region is required"),
   district: z.string().optional(),
   // Ghana Card (stored, not shown to users)
@@ -22,12 +22,12 @@ const registerSchema = z.object({
   farmLocation: z.string().optional(),
   // Buyer-specific
   businessName: z.string().optional(),
-  businessType: z.enum(["RETAILER", "RESTAURANT", "PROCESSOR", "EXPORTER", "HOUSEHOLD"]).optional(),
+  businessType: z.enum(["WHOLESALER", "RETAILER", "RESTAURANT", "PROCESSOR", "EXPORTER", "HOUSEHOLD"]).optional(),
   // Logistics-specific
   companyName: z.string().optional(),
   licensePlate: z.string().optional(),
-  // Vendor-specific
-  shopName: z.string().optional(),
+  // Storage facility-specific
+  facilityName: z.string().optional(),
 });
 
 function formValue(formData: FormData, key: string): string | undefined {
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       businessType: formValue(formData, "businessType"),
       companyName: formValue(formData, "companyName"),
       licensePlate: formValue(formData, "licensePlate"),
-      shopName: formValue(formData, "shopName"),
+      facilityName: formValue(formData, "facilityName"),
     });
 
     const idPhotoFile = formData.get("idPhotoFront");
@@ -134,12 +134,13 @@ export async function POST(req: NextRequest) {
             },
           },
         }),
-        ...(data.role === "VENDOR" && {
-          vendorProfile: {
+        ...(data.role === "STORAGE_FACILITY" && {
+          storageFacilityProfile: {
             create: {
-              shopName: data.shopName ?? `${data.name}'s Shop`,
+              name: data.facilityName ?? `${data.name}'s Storage Facility`,
               location: data.region,
-              coverageAreas: [data.region],
+              storageTypes: [],
+              acceptedCategories: [],
             },
           },
         }),

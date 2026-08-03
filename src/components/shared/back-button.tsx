@@ -13,7 +13,7 @@ interface BackButtonProps {
 
 // Goes back to wherever the user actually came from (browser history) when there is
 // somewhere to go back to; otherwise falls back to their dashboard (or the landing
-// page if signed out) — for pages like Marketplace/Equipment that are reachable from
+// page if signed out) — for pages like Marketplace that are reachable from
 // many different places and don't have a single "correct" parent route.
 export function BackButton({ className, iconOnly = false }: BackButtonProps) {
   const router = useRouter();

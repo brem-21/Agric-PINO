@@ -7,54 +7,53 @@ datasource db {
 }
 
 model User {
-  id                String             @id @default(cuid())
-  name              String
-  email             String?            @unique
-  emailVerified     DateTime?
-  phone             String             @unique
-  password          String?
-  image             String?
-  role              UserRole           @default(FARMER)
-  region            String?
-  district          String?
-  isActive          Boolean            @default(true)
-  ghanaCardNumber   String?            @unique
-  ghanaCardName     String?
-  residenceLocation String?
-  isVerified        Boolean            @default(false)
-  verifiedAt        DateTime?
-  latitude          Float?
-  longitude         Float?
-  lastSeen          DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  isVendor          Boolean            @default(false)
-  accounts          Account[]
-  buyerProfile      BuyerProfile?
-  complaints        Complaint[]        @relation("UserComplaints")
-  events            UserEvent[]
-  recommendations   Recommendation[]
-  farmerProfile     FarmerProfile?
-  following         Follow[]           @relation("UserFollowing")
-  followers         Follow[]           @relation("UserFollowers")
-  logisticsProfile  LogisticsProfile?
-  receivedMessages  Message[]          @relation("ReceivedMessages")
-  sentMessages      Message[]          @relation("SentMessages")
-  sentNotifs        Notification[]     @relation("NotificationActor")
-  notifications     Notification[]     @relation("NotificationRecipient")
-  buyerOrders       Order[]            @relation("BuyerOrders")
-  farmerOrders      Order[]            @relation("FarmerOrders")
-  listings          ProduceListing[]
-  reviewsGiven      Review[]           @relation("ReviewAuthor")
-  reviewsReceived   Review[]           @relation("ReviewTarget")
-  sessions          Session[]
-  transportRequests TransportRequest[]
-  vendorOrders      VendorOrder[]      @relation("CustomerVendorOrders")
-  vendorProfile     VendorProfile?
-  verificationRequests VerificationRequest[] @relation("VerificationApplicant")
-  verificationReviews  VerificationRequest[] @relation("VerificationReviewer")
-  adminRequest         AdminRequest?          @relation("AdminRequestApplicant")
-  adminRequestReviews  AdminRequest[]         @relation("AdminRequestReviewer")
+  id                     String                  @id @default(cuid())
+  name                   String
+  email                  String?                 @unique
+  emailVerified          DateTime?
+  phone                  String                  @unique
+  password               String?
+  image                  String?
+  role                   UserRole                @default(FARMER)
+  region                 String?
+  district               String?
+  isActive               Boolean                 @default(true)
+  ghanaCardNumber        String?                 @unique
+  ghanaCardName          String?
+  residenceLocation      String?
+  isVerified             Boolean                 @default(false)
+  verifiedAt             DateTime?
+  latitude               Float?
+  longitude              Float?
+  lastSeen               DateTime?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  accounts               Account[]
+  buyerProfile           BuyerProfile?
+  complaints             Complaint[]             @relation("UserComplaints")
+  events                 UserEvent[]
+  recommendations        Recommendation[]
+  farmerProfile          FarmerProfile?
+  following              Follow[]                @relation("UserFollowing")
+  followers              Follow[]                @relation("UserFollowers")
+  logisticsProfile       LogisticsProfile?
+  receivedMessages       Message[]               @relation("ReceivedMessages")
+  sentMessages           Message[]               @relation("SentMessages")
+  sentNotifs             Notification[]          @relation("NotificationActor")
+  notifications          Notification[]          @relation("NotificationRecipient")
+  buyerOrders            Order[]                 @relation("BuyerOrders")
+  farmerOrders           Order[]                 @relation("FarmerOrders")
+  listings               ProduceListing[]
+  reviewsGiven           Review[]                @relation("ReviewAuthor")
+  reviewsReceived        Review[]                @relation("ReviewTarget")
+  sessions               Session[]
+  transportRequests      TransportRequest[]
+  storageFacilityProfile StorageFacilityProfile?
+  storageBookings        StorageBooking[]
+  verificationRequests   VerificationRequest[]   @relation("VerificationApplicant")
+  verificationReviews    VerificationRequest[]   @relation("VerificationReviewer")
+  adminRequest           AdminRequest?           @relation("AdminRequestApplicant")
+  adminRequestReviews    AdminRequest[]          @relation("AdminRequestReviewer")
 }
 
 model FarmerProfile {
@@ -106,53 +105,66 @@ model LogisticsProfile {
 }
 
 model ProduceListing {
-  id             String          @id @default(cuid())
+  id                String                  @id @default(cuid())
   // Monotonic push-counter — guarantees a true LIFO order for the marketplace feed
   // even when many rows share the same createdAt (e.g. bulk-seeded data), which
   // createdAt alone can't break ties on deterministically.
-  sequence       Int             @default(autoincrement())
-  farmerId       String
-  cropType       String
-  category       ProduceCategory
-  quantity       Float
-  unit           String
-  pricePerUnit   Float
-  currency       String          @default("GHS")
-  description    String?
-  images         String[]
-  harvestDate    DateTime?
-  expiryDate     DateTime?
-  location       String
-  latitude       Float?
-  longitude      Float?
-  status         ListingStatus   @default(ACTIVE)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  approvalNotes  String?
-  approvalStatus ApprovalStatus  @default(PENDING)
-  orders         Order[]
-  farmer         User            @relation(fields: [farmerId], references: [id])
+  sequence          Int                     @default(autoincrement())
+  farmerId          String
+  cropType          String
+  category          ProduceCategory
+  quantity          Float
+  unit              String
+  pricePerUnit      Float
+  currency          String                  @default("GHS")
+  description       String?
+  images            String[]
+  harvestDate       DateTime?
+  expiryDate        DateTime?
+  location          String
+  latitude          Float?
+  longitude         Float?
+  status            ListingStatus           @default(ACTIVE)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  approvalNotes     String?
+  approvalStatus    ApprovalStatus          @default(PENDING)
+  // Set only once a storage-facility operator marks the matching StorageBooking
+  // DROPPED_OFF — null means the farmer is holding/selling this produce directly,
+  // unchanged from the original flow.
+  storageFacilityId String?
+  orders            Order[]
+  farmer            User                    @relation(fields: [farmerId], references: [id])
+  storageFacility   StorageFacilityProfile? @relation(fields: [storageFacilityId], references: [id])
+  storageBookings   StorageBooking[]
 }
 
 model Order {
-  id               String            @id @default(cuid())
-  buyerId          String
-  farmerId         String
-  listingId        String
-  quantity         Float
-  totalAmount      Float
-  status           OrderStatus       @default(PENDING)
-  paymentStatus    PaymentStatus     @default(UNPAID)
-  fulfillmentType  OrderFulfillment  @default(DELIVERY)
-  notes            String?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  deliveryNumber   String?           @unique
-  buyer            User              @relation("BuyerOrders", fields: [buyerId], references: [id])
-  farmer           User              @relation("FarmerOrders", fields: [farmerId], references: [id])
-  listing          ProduceListing    @relation(fields: [listingId], references: [id])
-  payment          Payment?
-  transportRequest TransportRequest?
+  id                       String                  @id @default(cuid())
+  buyerId                  String
+  farmerId                 String
+  listingId                String
+  quantity                 Float
+  totalAmount              Float
+  status                   OrderStatus             @default(PENDING)
+  paymentStatus            PaymentStatus           @default(UNPAID)
+  fulfillmentType          OrderFulfillment        @default(DELIVERY)
+  notes                    String?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  deliveryNumber           String?                 @unique
+  // Snapshotted from the listing at order-creation time — bookkeeping only, no
+  // real money-split happens (see Payment/paystack.ts: a single platform-account
+  // charge, same as every other order). null = produce wasn't facility-routed.
+  storageFacilityId        String?
+  facilityCommissionRate   Float?
+  facilityCommissionAmount Float?
+  buyer                    User                    @relation("BuyerOrders", fields: [buyerId], references: [id])
+  farmer                   User                    @relation("FarmerOrders", fields: [farmerId], references: [id])
+  listing                  ProduceListing          @relation(fields: [listingId], references: [id])
+  storageFacility          StorageFacilityProfile? @relation(fields: [storageFacilityId], references: [id])
+  payment                  Payment?
+  transportRequest         TransportRequest?
 }
 
 model Payment {
@@ -262,7 +274,6 @@ model ReviewRequest {
 
 enum ReviewOrderType {
   ORDER
-  VENDOR_ORDER
 }
 
 model Account {
@@ -323,103 +334,61 @@ model LoginAttempt {
   @@index([phone, createdAt])
 }
 
-model VendorProfile {
-  id            String          @id @default(cuid())
-  userId        String          @unique
-  shopName      String
-  description   String?
-  location      String
-  coverageAreas String[]
-  latitude      Float?
-  longitude     Float?
-  rating        Float           @default(0)
-  totalRatings  Int             @default(0)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  orders        VendorOrder[]
-  products      VendorProduct[]
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vehicles      VendorVehicle[]
+// A physical produce storage site (cold-chain and/or hermetic/dry storage) that
+// a farmer can book a drop-off slot at instead of selling directly. See
+// StorageBooking for the drop-off lifecycle and Order.storageFacilityId for how
+// a sale routed through a facility is recorded.
+model StorageFacilityProfile {
+  id                 String            @id @default(cuid())
+  userId             String            @unique
+  name               String
+  description        String?
+  location           String
+  latitude           Float?
+  longitude          Float?
+  storageTypes       StorageType[]
+  capacityTonnes     Float?
+  acceptedCategories ProduceCategory[]
+  operatingHours     String?
+  rating             Float             @default(0)
+  totalRatings       Int               @default(0)
+  // Mirrors ProduceListing's admin moderation gate — a facility only appears
+  // on the farmer-facing map once approved.
+  approvalStatus     ApprovalStatus    @default(PENDING)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings           StorageBooking[]
+  listings           ProduceListing[]
+  orders             Order[]
 }
 
-model VendorProduct {
-  id          String                @id @default(cuid())
-  vendorId    String
-  name        String
-  category    VendorProductCategory
-  description String?
-  price       Float
-  unit        String
-  stock       Int                   @default(0)
-  images      String[]
-  isAvailable Boolean               @default(true)
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
-  orderItems  VendorOrderItem[]
-  vendor      VendorProfile         @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-}
-
-model VendorOrder {
-  id              String            @id @default(cuid())
-  vendorId        String
-  customerId      String
-  totalAmount     Float
-  status          VendorOrderStatus @default(PENDING)
-  deliveryAddress String?
-  deliveryLat     Float?
-  deliveryLng     Float?
-  notes           String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  delivery        VendorDelivery?
-  customer        User              @relation("CustomerVendorOrders", fields: [customerId], references: [id])
-  vendor          VendorProfile     @relation(fields: [vendorId], references: [id])
-  items           VendorOrderItem[]
-}
-
-model VendorOrderItem {
-  id        String        @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  unitPrice Float
-  subtotal  Float
-  order     VendorOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   VendorProduct @relation(fields: [productId], references: [id])
-}
-
-model VendorVehicle {
-  id           String            @id @default(cuid())
-  vendorId     String
-  vehicleType  VendorVehicleType
-  licensePlate String?
-  driverName   String?
-  driverPhone  String?
-  capacity     Float?
-  isAvailable  Boolean           @default(true)
-  latitude     Float?
-  longitude    Float?
-  lastSeen     DateTime?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  deliveries   VendorDelivery[]
-  vendor       VendorProfile     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-}
-
-model VendorDelivery {
-  id               String          @id @default(cuid())
-  orderId          String          @unique
-  vehicleId        String?
-  pickupLocation   String
-  deliveryLocation String
-  status           TransportStatus @default(PENDING)
-  estimatedCost    Float?
-  scheduledDate    DateTime?
-  notes            String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  order            VendorOrder     @relation(fields: [orderId], references: [id])
-  vehicle          VendorVehicle?  @relation(fields: [vehicleId], references: [id])
+// A farmer's request to drop harvested produce off at a facility. Deliberately
+// decoupled from ProduceListing until drop-off — a farmer can book a slot
+// before a sellable listing exists, and this avoids the same physical harvest
+// being listed both directly and via a facility at once.
+model StorageBooking {
+  id               String                 @id @default(cuid())
+  facilityId       String
+  farmerId         String
+  listingId        String?
+  cropType         String
+  category         ProduceCategory
+  quantity         Float
+  unit             String
+  pricePerUnit     Float
+  scheduledDropoff DateTime
+  status           StorageBookingStatus   @default(PENDING)
+  facilityNotes    String?
+  confirmedAt      DateTime?
+  droppedOffAt     DateTime?
+  returnedAt       DateTime?
+  cancelledAt      DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  facility         StorageFacilityProfile @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  farmer           User                   @relation(fields: [farmerId], references: [id])
+  listing          ProduceListing?        @relation(fields: [listingId], references: [id])
 }
 
 model Follow {
@@ -449,13 +418,13 @@ model Notification {
 }
 
 model Recommendation {
-  id        String   @id @default(cuid())
-  userId    String?
-  phone     String
-  message   String
-  listings  Json
-  sentAt    DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id       String   @id @default(cuid())
+  userId   String?
+  phone    String
+  message  String
+  listings Json
+  sentAt   DateTime @default(now())
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([sentAt])
@@ -490,20 +459,20 @@ model VerificationRequest {
 // VerificationRequest this isn't a paid optional badge, it's a hard requirement
 // before the account can use any admin feature at all.
 model AdminRequest {
-  id               String         @id @default(cuid())
-  userId           String         @unique
-  ghanaCardNumber  String
-  ghanaCardName    String
-  idPhotoFront     String
-  idPhotoBack      String?
-  status           ApprovalStatus @default(PENDING)
-  reviewNotes      String?
-  reviewedById     String?
-  reviewedAt       DateTime?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  user             User           @relation("AdminRequestApplicant", fields: [userId], references: [id], onDelete: Cascade)
-  reviewedBy       User?          @relation("AdminRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  id              String         @id @default(cuid())
+  userId          String         @unique
+  ghanaCardNumber String
+  ghanaCardName   String
+  idPhotoFront    String
+  idPhotoBack     String?
+  status          ApprovalStatus @default(PENDING)
+  reviewNotes     String?
+  reviewedById    String?
+  reviewedAt      DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  user            User           @relation("AdminRequestApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy      User?          @relation("AdminRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@index([status])
 }
@@ -561,38 +530,30 @@ enum UserRole {
   BUYER
   LOGISTICS
   ADMIN
-  VENDOR
+  STORAGE_FACILITY
 }
 
-enum VendorProductCategory {
-  EQUIPMENT
-  SEEDS
-  FERTILIZERS
-  PESTICIDES
-  TOOLS
-  IRRIGATION
-  ANIMAL_FEED
-  STORAGE
-  OTHER
+// COLD_CHAIN: refrigerated storage for perishables (tomato, mango, watermelon,
+// leafy veg). HERMETIC_DRY: PICS-bag-style airtight dry storage for grains and
+// legumes (maize, sorghum, millet, rice, cowpea, soybean, groundnut). These are
+// the two loss-reduction technologies the post-harvest-loss research actually
+// documents — deliberately not a broader/vaguer list.
+enum StorageType {
+  COLD_CHAIN
+  HERMETIC_DRY
 }
 
-enum VendorOrderStatus {
+enum StorageBookingStatus {
   PENDING
   CONFIRMED
-  PROCESSING
-  SHIPPED
-  DELIVERED
+  REJECTED
+  DROPPED_OFF
+  RETURNED_TO_FARMER
   CANCELLED
 }
 
-enum VendorVehicleType {
-  BUS
-  MINIBUS
-  PICKUP_TRUCK
-  VAN
-}
-
 enum BuyerType {
+  WHOLESALER
   RETAILER
   RESTAURANT
   PROCESSOR

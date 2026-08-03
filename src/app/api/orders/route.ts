@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendOrderConfirmationSMS } from "@/lib/mnotify";
+import { FACILITY_COMMISSION_RATE } from "@/lib/utils";
 import { z } from "zod";
 
 const orderSchema = z.object({
@@ -99,6 +100,12 @@ export async function POST(req: NextRequest) {
 
       const totalAmount = quantity * listing.pricePerUnit;
 
+      // Snapshotted at order time so later changes to the listing's storage
+      // status don't retroactively change how a past sale is split.
+      const storageFacilityId = listing.storageFacilityId;
+      const facilityCommissionRate = storageFacilityId ? FACILITY_COMMISSION_RATE : null;
+      const facilityCommissionAmount = storageFacilityId ? totalAmount * FACILITY_COMMISSION_RATE : null;
+
       const created = await tx.order.create({
         data: {
           buyerId: session.user.id,
@@ -108,6 +115,9 @@ export async function POST(req: NextRequest) {
           totalAmount,
           notes,
           fulfillmentType,
+          storageFacilityId,
+          facilityCommissionRate,
+          facilityCommissionAmount,
         },
         include: {
           listing: { select: { cropType: true, unit: true } },

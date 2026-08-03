@@ -22,9 +22,9 @@ const ROLE_NAV_LINKS: Record<string, { href: string; label: string }[]> = {
   BUYER: [
     { href: "/buyer/orders", label: "My Orders" },
   ],
-  VENDOR: [
-    { href: "/vendor/products", label: "My Products" },
-    { href: "/vendor/orders", label: "Orders" },
+  STORAGE_FACILITY: [
+    { href: "/storage/bookings", label: "Bookings" },
+    { href: "/storage/inventory", label: "Inventory" },
   ],
   LOGISTICS: [
     { href: "/logistics/requests", label: "Transport Requests" },

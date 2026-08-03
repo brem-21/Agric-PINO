@@ -5,7 +5,6 @@ import { ReviewForm } from "@/components/shared/review-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Leaf } from "lucide-react";
 import Link from "next/link";
-import type { ReviewOrderType } from "@prisma/client";
 
 function NotYetDeliveredCard({ backHref }: { backHref: string }) {
   return (
@@ -44,33 +43,26 @@ function AllDoneCard() {
 
 export default async function ReviewPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ orderId: string }>;
-  searchParams: Promise<{ type?: string }>;
 }) {
   const { orderId } = await params;
-  const { type } = await searchParams;
-  const orderType: ReviewOrderType = type === "vendor" ? "VENDOR_ORDER" : "ORDER";
 
   const session = await auth();
-  if (!session) redirect(`/auth/login?redirect=/review/${orderId}${type ? `?type=${type}` : ""}`);
+  if (!session) redirect(`/auth/login?redirect=/review/${orderId}`);
 
-  const status =
-    orderType === "VENDOR_ORDER"
-      ? (await prisma.vendorOrder.findUnique({ where: { id: orderId }, select: { status: true } }))?.status
-      : (await prisma.order.findUnique({ where: { id: orderId }, select: { status: true } }))?.status;
+  const status = (await prisma.order.findUnique({ where: { id: orderId }, select: { status: true } }))?.status;
 
   if (!status) notFound();
 
-  const backHref = orderType === "VENDOR_ORDER" ? "/buyer/purchases" : "/buyer/orders";
+  const backHref = "/buyer/orders";
 
   if (status !== "DELIVERED") {
     return <NotYetDeliveredCard backHref={backHref} />;
   }
 
   const pending = await prisma.reviewRequest.findMany({
-    where: { orderId, userId: session.user.id, orderType, completed: false },
+    where: { orderId, userId: session.user.id, orderType: "ORDER", completed: false },
     orderBy: { createdAt: "asc" },
   });
 
@@ -84,7 +76,6 @@ export default async function ReviewPage({
       id: true,
       name: true,
       farmerProfile: { select: { farmName: true } },
-      vendorProfile: { select: { shopName: true } },
     },
   });
 
@@ -93,8 +84,6 @@ export default async function ReviewPage({
     const targetName =
       p.targetRole === "FARMER"
         ? target?.farmerProfile?.farmName ?? target?.name ?? "Farmer"
-        : p.targetRole === "VENDOR"
-        ? target?.vendorProfile?.shopName ?? target?.name ?? "Vendor"
         : target?.name ?? "User";
 
     return { targetId: p.targetId, targetRole: p.targetRole, targetName };
@@ -122,7 +111,7 @@ export default async function ReviewPage({
             <CardContent>
               <ReviewForm
                 orderId={orderId}
-                orderType={orderType}
+                orderType="ORDER"
                 targetId={item.targetId}
                 targetName={item.targetName}
                 targetRole={item.targetRole}

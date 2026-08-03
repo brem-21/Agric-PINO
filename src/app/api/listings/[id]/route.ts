@@ -46,6 +46,9 @@ export async function GET(
           },
         },
       },
+      storageFacility: {
+        select: { id: true, name: true, location: true, storageTypes: true },
+      },
     },
   });
 

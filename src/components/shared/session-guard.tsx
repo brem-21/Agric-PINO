@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 interface SessionGuardProps {
   /** Roles allowed to view this section. */
   expectedRoles: string[];
-  /** Also allow through if the session's isVendor flag is set (vendor section). */
-  allowVendorFlag?: boolean;
 }
 
 /**
@@ -17,7 +15,7 @@ interface SessionGuardProps {
  * switched in another (the server-side auth() check in the layout still owns
  * the actual access decision; this just stops it from being skipped).
  */
-export function SessionGuard({ expectedRoles, allowVendorFlag }: SessionGuardProps) {
+export function SessionGuard({ expectedRoles }: SessionGuardProps) {
   const router = useRouter();
 
   useEffect(() => {
@@ -26,8 +24,7 @@ export function SessionGuard({ expectedRoles, allowVendorFlag }: SessionGuardPro
         const res = await fetch("/api/auth/session", { cache: "no-store" });
         const session = await res.json();
         const role = session?.user?.role as string | undefined;
-        const isVendor = session?.user?.isVendor as boolean | undefined;
-        const ok = (role && expectedRoles.includes(role)) || (allowVendorFlag && isVendor);
+        const ok = role && expectedRoles.includes(role);
         if (!ok) router.refresh();
       } catch {
         // Network hiccup — don't punish the user for a failed background check.
@@ -44,7 +41,7 @@ export function SessionGuard({ expectedRoles, allowVendorFlag }: SessionGuardPro
       window.removeEventListener("focus", check);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [expectedRoles, allowVendorFlag, router]);
+  }, [expectedRoles, router]);
 
   return null;
 }

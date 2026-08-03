@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface ReviewFormProps {
   orderId: string;
-  orderType?: "ORDER" | "VENDOR_ORDER";
+  orderType?: "ORDER";
   targetId: string;
   targetName: string;
   targetRole: string;
@@ -18,7 +18,7 @@ const ROLE_LABELS: Record<string, string> = {
   FARMER: "Farmer",
   BUYER: "Buyer",
   LOGISTICS: "Delivery Rider",
-  VENDOR: "Vendor",
+  STORAGE_FACILITY: "Storage Facility",
 };
 
 export function ReviewForm({ orderId, orderType = "ORDER", targetId, targetName, targetRole, onSuccess }: ReviewFormProps) {

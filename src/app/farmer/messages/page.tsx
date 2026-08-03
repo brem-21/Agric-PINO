@@ -32,7 +32,7 @@ interface SearchUser {
   image: string | null;
   role: string;
   farmerProfile: { farmName: string } | null;
-  vendorProfile: { shopName: string } | null;
+  storageFacilityProfile: { name: string } | null;
   buyerProfile: { businessName: string | null } | null;
 }
 
@@ -46,7 +46,7 @@ function RoleBadge({ role }: { role: string }) {
 
 function subLabel(u: SearchUser): string {
   if (u.farmerProfile?.farmName) return u.farmerProfile.farmName;
-  if (u.vendorProfile?.shopName) return u.vendorProfile.shopName;
+  if (u.storageFacilityProfile?.name) return u.storageFacilityProfile.name;
   if (u.buyerProfile?.businessName) return u.buyerProfile.businessName;
   return "";
 }

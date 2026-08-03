@@ -17,7 +17,7 @@ import {
   BadgeCheck,
   MessageSquare,
   ShoppingBag,
-  Store,
+  Warehouse,
   UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,13 +28,13 @@ const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/listings", label: "Listing Approvals", icon: CheckSquare },
+  { href: "/admin/storage-facilities", label: "Storage Facilities", icon: Warehouse },
   { href: "/admin/complaints", label: "Complaints", icon: AlertTriangle },
   { href: "/admin/verifications", label: "Verifications", icon: BadgeCheck },
   { href: "/admin/admin-requests", label: "Admin Applications", icon: UserPlus },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/messages", label: "Messages", icon: MessageSquare },
   { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
-  { href: "/equipment", label: "Equipment Shop", icon: Store },
 ];
 
 export default function AdminSidebar() {

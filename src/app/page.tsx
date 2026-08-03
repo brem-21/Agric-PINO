@@ -47,16 +47,16 @@ const HOW_IT_WORKS = [
 ];
 
 const WHY_BENEFITS = [
-  "Direct farmer-to-buyer connections",
-  "Transparent, fair pricing",
-  "Real-time logistics coordination",
-  "Mobile money payment integration",
-  "Rating & trust system",
+  "Book a nearby cold-chain or dry storage facility instead of selling within hours of harvest",
+  "Reliable riders so produce isn't lost or bruised in transit on bad feeder roads",
+  "Direct farmer-to-wholesaler and farmer-to-processor connections — no seasonal gluts left to spoil unsold",
+  "Storage facilities take just a 5% commission on any sale — the farmer keeps 95%",
+  "AI market and handling advice, plus a rating & trust system for every party",
 ];
 
 const IMPACT_METRICS = [
-  { icon: TrendingUp, value: "30%", label: "Average income increase" },
-  { icon: Truck, value: "50%", label: "Less post-harvest loss" },
+  { icon: TrendingUp, value: "10–50%", label: "Of harvests lost in Northern Ghana today" },
+  { icon: Truck, value: "US$1.9B", label: "Lost nationally to PHL each year" },
   { icon: Users, value: "3", label: "Regions covered" },
   { icon: Package, value: "15+", label: "Crop types listed" },
 ];
@@ -78,7 +78,7 @@ export default async function LandingPage() {
       <main>
       {/* Announcement Bar */}
       <div className="w-full bg-[#d3fa99] py-2 text-center text-sm text-[#1c3a13] font-medium">
-        Northern Ghana&apos;s Digital Farm-to-Market Platform
+        Starting with Upper East Region tomato farmers — Ghana loses ~US$1.9B a year to post-harvest loss
       </div>
 
       {/* Hero */}
@@ -88,18 +88,22 @@ export default async function LandingPage() {
           <div className="rounded-[2.5rem] bg-[#1c3a13]/55 backdrop-blur-sm px-6 py-10 sm:px-12">
             <div className="inline-flex items-center gap-2 border border-[#fcfcf7]/20 rounded-full px-4 py-1.5 text-sm text-[#fcfcf7]/70 mb-8">
               <MapPin className="h-4 w-4" />
-              <span>Northern Savannah Zone — Ghana&apos;s Food Basket</span>
+              <span>Upper East Region &amp; Northern Savannah Zone — Ghana&apos;s Food Basket</span>
             </div>
             <h1 className="text-5xl sm:text-6xl font-light text-[#fcfcf7] tracking-tight mb-6 leading-tight">
-              Fresh Produce,
+              Stop the Harvest
               <br />
-              Fair Prices,
+              from Going to
               <br />
-              <span className="text-[#d3fa99]">Direct from Farmers</span>
+              <span className="text-[#d3fa99]">Waste</span>
             </h1>
             <p className="text-lg sm:text-xl text-[#fcfcf7]/70 mb-10 max-w-2xl mx-auto">
-              Connecting smallholder farmers across Northern Ghana with buyers and
-              reliable logistics — reducing waste, increasing income, feeding communities.
+              Tomato farmers in the Upper East Region lose produce at every stage — on the
+              farm, with wholesalers, at retail — because there&apos;s no cold storage and
+              no ready buyer. Lorgric lets them book a nearby cold-chain facility instead
+              of selling within hours of harvest, reaching wholesalers and processors
+              directly once it&apos;s stored. The same model covers grain farmers across
+              the Northern Savannah Zone with hermetic dry storage.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {isAuthenticated ? (
@@ -223,12 +227,15 @@ export default async function LandingPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <ScrollReveal>
               <h2 className="text-4xl font-light text-[#1c3a13] tracking-tight mb-4">
-                Reducing Waste,<br />Increasing Farmer Income
+                Built to Fight<br />Post-Harvest Loss
               </h2>
               <p className="text-[#1c3a13]/70 mb-8 leading-relaxed">
-                Ghana loses between 20–50% of fruits and vegetables post-harvest. Lorgric
-                directly addresses this by eliminating middlemen, accelerating transactions,
-                and connecting farmers with reliable transport before produce spoils.
+                Poor storage, bad feeder roads, and a lack of ready markets — not low
+                yields — are why so much of Northern Ghana&apos;s harvest never reaches a
+                plate. Field studies on sorghum in the region show that closing that
+                gap with better handling and faster market access cut losses from 12.4%
+                to 6.6% and nearly doubled farmer income in a single season. Lorgric
+                builds that same fix into the market itself.
               </p>
               <ul className="space-y-3">
                 {WHY_BENEFITS.map((point) => (

@@ -9,10 +9,18 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Lorgric — Farm-to-Market Platform",
+  title: "Lorgric — Fighting Post-Harvest Loss in Northern Ghana",
   description:
-    "Connecting smallholder farmers in Ghana's Northern Savannah Zone with buyers and logistics providers. Fresh produce, fair prices, reliable delivery.",
-  keywords: ["agriculture", "Ghana", "Northern Ghana", "farm to market", "produce marketplace"],
+    "Lorgric connects smallholder farmers in Ghana's Northern Savannah Zone directly with buyers, riders, and processors — getting produce to market before it spoils and cutting the post-harvest losses that cost the region up to 50% of every harvest.",
+  keywords: [
+    "post-harvest loss",
+    "agriculture",
+    "Ghana",
+    "Northern Ghana",
+    "farm to market",
+    "produce marketplace",
+    "food security",
+  ],
 };
 
 export default function RootLayout({

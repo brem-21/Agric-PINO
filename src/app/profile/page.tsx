@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
 import { ProfileImageUpload } from "@/components/shared/profile-image-upload";
-import { Phone, MapPin, Star, Leaf, ShoppingBag, Bike, Store, ShieldCheck, ChevronRight, ArrowLeft } from "lucide-react";
+import { Phone, MapPin, Star, Leaf, ShoppingBag, Bike, Warehouse, ShieldCheck, ChevronRight, ArrowLeft } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { VERIFICATION_FEES } from "@/lib/verification";
 import { getDashboardPath } from "@/lib/dashboard-path";
@@ -15,7 +15,7 @@ const ROLE_LABEL: Record<string, string> = {
   FARMER: "Farmer",
   BUYER: "Buyer",
   LOGISTICS: "Logistics Rider",
-  VENDOR: "Vendor",
+  STORAGE_FACILITY: "Storage Facility",
   ADMIN: "Admin",
 };
 
@@ -23,7 +23,7 @@ const ROLE_COLOR: Record<string, string> = {
   FARMER: "bg-[#d3fa99] text-[#1c3a13]",
   BUYER: "bg-[#eeeee9] text-[#1c3a13]",
   LOGISTICS: "bg-[#eeeee9] text-[#1c3a13]",
-  VENDOR: "bg-[#eeeee9] text-[#1c3a13]",
+  STORAGE_FACILITY: "bg-[#eeeee9] text-[#1c3a13]",
   ADMIN: "bg-[#eeeee9] text-[#1c3a13]",
 };
 
@@ -44,7 +44,7 @@ export default async function ProfilePage() {
 
   const roleIcon = user.role === "FARMER" ? <Leaf className="h-4 w-4" />
     : user.role === "BUYER" ? <ShoppingBag className="h-4 w-4" />
-    : user.role === "VENDOR" ? <Store className="h-4 w-4" />
+    : user.role === "STORAGE_FACILITY" ? <Warehouse className="h-4 w-4" />
     : <Bike className="h-4 w-4" />;
 
   return (

@@ -13,8 +13,6 @@ import {
   X,
   ChevronRight,
   Truck,
-  Store,
-  History,
   AlertTriangle,
 } from "lucide-react";
 import { SignOutButton } from "@/components/shared/signout-button";
@@ -27,8 +25,6 @@ const NAV_ITEMS = [
   { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
   { href: "/buyer/orders", label: "My Orders", icon: ShoppingCart },
   { href: "/find-rider", label: "Find Delivery", icon: Truck },
-  { href: "/equipment", label: "Equipment Shop", icon: Store },
-  { href: "/buyer/purchases", label: "Purchase History", icon: History },
   { href: "/buyer/messages", label: "Messages", icon: MessageSquare },
   { href: "/buyer/complaints", label: "Report Incident", icon: AlertTriangle },
 ];
@@ -71,7 +67,7 @@ export default function BuyerSidebar({ user }: BuyerSidebarProps) {
 
         <nav className="flex-1 py-4 space-y-1 px-2">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-            const exactMatch = ["/buyer/dashboard", "/marketplace", "/find-rider", "/equipment"].includes(href);
+            const exactMatch = ["/buyer/dashboard", "/marketplace", "/find-rider"].includes(href);
             const active = pathname === href || (!exactMatch && pathname.startsWith(href));
             return (
               <Link

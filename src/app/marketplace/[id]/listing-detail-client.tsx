@@ -20,7 +20,7 @@ import { ProductImageSlideshow } from "@/components/shared/product-image-slidesh
 import { FollowButton } from "@/components/shared/follow-button";
 import { QuickMessageDialog } from "@/components/shared/quick-message-dialog";
 import { PaymentChoicePanel } from "@/components/shared/payment-choice-panel";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, getSpoilageUrgency } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -55,6 +55,7 @@ interface ListingDetail {
       acceptsCOD: boolean;
     } | null;
   };
+  storageFacility: { id: string; name: string; location: string; storageTypes: string[] } | null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -209,6 +210,7 @@ export function ListingDetailClient({ id }: { id: string }) {
   const acceptsCOD = fp?.acceptsCOD ?? true;
   const emoji = CATEGORY_EMOJI[listing.category] ?? "🌿";
   const initials = listing.farmer.name.split(" ").map((p) => p[0]).join("").toUpperCase().slice(0, 2);
+  const urgency = getSpoilageUrgency(listing.expiryDate);
 
   return (
     <div className="min-h-screen bg-[#fcfcf7]">
@@ -296,8 +298,15 @@ export function ListingDetailClient({ id }: { id: string }) {
                   <div className="flex items-start gap-2.5">
                     <MapPin className="h-4 w-4 text-[#1c3a13] mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-[#1c3a13]/40 uppercase tracking-wide font-medium">Location</p>
-                      <p className="text-sm font-semibold text-[#1c3a13] line-clamp-2">{listing.location}</p>
+                      <p className="text-xs text-[#1c3a13]/40 uppercase tracking-wide font-medium">
+                        {listing.storageFacility ? "Pickup Point" : "Location"}
+                      </p>
+                      <p className="text-sm font-semibold text-[#1c3a13] line-clamp-2">
+                        {listing.storageFacility ? listing.storageFacility.name : listing.location}
+                      </p>
+                      {listing.storageFacility && (
+                        <p className="text-xs text-[#1c3a13]/50">{listing.storageFacility.location}</p>
+                      )}
                     </div>
                   </div>
                   {listing.harvestDate && (
@@ -319,6 +328,21 @@ export function ListingDetailClient({ id }: { id: string }) {
                     </div>
                   )}
                 </div>
+
+                {urgency && (
+                  <div
+                    className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium ${
+                      urgency.level === "critical"
+                        ? "bg-red-50 border-red-200 text-red-700"
+                        : urgency.level === "urgent"
+                        ? "bg-amber-50 border-amber-200 text-amber-700"
+                        : "bg-yellow-50 border-yellow-200 text-yellow-700"
+                    }`}
+                  >
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <span>{urgency.label} — order soon to avoid this produce going to waste.</span>
+                  </div>
+                )}
               </div>
             </div>
 

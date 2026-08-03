@@ -9,18 +9,10 @@ import {
   getOnlineStatus,
   type FareEstimate,
 } from "@/lib/utils";
-import { RiderMap, type Rider, type MapPin, type VehicleUnit } from "@/components/shared/rider-map";
+import { RiderMap, type Rider, type MapPin } from "@/components/shared/rider-map";
 import { AvatarWithStatus, OnlineIndicator } from "@/components/shared/online-indicator";
 import { ArrowLeft, Leaf, MapPin as PinIcon, Navigation, Star, Phone, CheckCircle2, Truck } from "lucide-react";
 import Link from "next/link";
-
-const VEHICLE_EMOJIS: Record<string, string> = {
-  BUS: "🚌",
-  MINIBUS: "🚌",
-  PICKUP_TRUCK: "🚛",
-  VAN: "🚐",
-  MOTORBIKE: "🏍️",
-};
 
 interface Toast {
   message: string;
@@ -28,11 +20,10 @@ interface Toast {
 }
 
 type MapMode = "pickup" | "delivery" | null;
-type VehicleFilter = "all" | "motors" | "buses";
 
 interface DeliveryUnit {
   id: string;
-  category: "RIDER" | "VEHICLE";
+  category: "RIDER";
   vehicleType: string;
   name: string;
   phone: string | null;
@@ -58,7 +49,6 @@ function usePortalHref() {
 export default function FindDeliveryPage() {
   const portalHref = usePortalHref();
   const [units, setUnits] = useState<DeliveryUnit[]>([]);
-  const [vehicleFilter, setVehicleFilter] = useState<VehicleFilter>("all");
   const [mapMode, setMapMode] = useState<MapMode>(null);
   const [pickupPin, setPickupPin] = useState<MapPin | null>(null);
   const [deliveryPin, setDeliveryPin] = useState<MapPin | null>(null);
@@ -211,51 +201,23 @@ export default function FindDeliveryPage() {
     }
   }
 
-  // Split by type
-  const riders = units.filter((u) => u.category === "RIDER");
-  const vehicles = units.filter((u) => u.category === "VEHICLE");
+  const mapRiders: Rider[] = units.map((r) => ({
+    id: r.id,
+    name: r.name,
+    phone: r.phone ?? "",
+    companyName: r.companyName,
+    licensePlate: r.licensePlate,
+    rating: r.rating ?? 0,
+    totalRatings: r.totalRatings ?? 0,
+    lastSeen: r.lastSeen,
+    latitude: r.latitude,
+    longitude: r.longitude,
+    isVerified: r.isVerified,
+  }));
 
-  // Filter for display list
-  const displayUnits =
-    vehicleFilter === "motors" ? riders : vehicleFilter === "buses" ? vehicles : units;
+  const onlineCount = units.filter((u) => getOnlineStatus(u.lastSeen) === "online").length;
 
-  // Filter for map
-  const mapRiders: Rider[] =
-    vehicleFilter === "buses"
-      ? []
-      : riders.map((r) => ({
-          id: r.id,
-          name: r.name,
-          phone: r.phone ?? "",
-          companyName: r.companyName,
-          licensePlate: r.licensePlate,
-          rating: r.rating ?? 0,
-          totalRatings: r.totalRatings ?? 0,
-          lastSeen: r.lastSeen,
-          latitude: r.latitude,
-          longitude: r.longitude,
-          isVerified: r.isVerified,
-        }));
-
-  const mapVehicles: VehicleUnit[] =
-    vehicleFilter === "motors"
-      ? []
-      : vehicles.map((v) => ({
-          id: v.id,
-          vehicleType: v.vehicleType,
-          name: v.name,
-          phone: v.phone,
-          companyName: v.companyName,
-          licensePlate: v.licensePlate,
-          capacity: v.capacity,
-          lastSeen: v.lastSeen,
-          latitude: v.latitude,
-          longitude: v.longitude,
-        }));
-
-  const onlineCount = displayUnits.filter((u) => getOnlineStatus(u.lastSeen) === "online").length;
-
-  const sorted = [...displayUnits].sort((a, b) => {
+  const sorted = [...units].sort((a, b) => {
     const order = { online: 0, away: 1, offline: 2 };
     const aS = getOnlineStatus(a.lastSeen);
     const bS = getOnlineStatus(b.lastSeen);
@@ -268,8 +230,6 @@ export default function FindDeliveryPage() {
     }
     return 0;
   });
-
-  const selectedUnit = units.find((u) => u.id === selectedId);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#fcfcf7]">
@@ -301,23 +261,6 @@ export default function FindDeliveryPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Vehicle type filter */}
-          <div className="flex gap-2">
-            {(["all", "motors", "buses"] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => { setVehicleFilter(f); setSelectedId(null); }}
-                className={`flex-1 rounded-full px-2 py-1.5 text-xs font-semibold transition-colors border ${
-                  vehicleFilter === f
-                    ? "bg-[#1c3a13] text-[#fcfcf7] border-[#1c3a13]"
-                    : "border-[#eeeee9] text-[#1c3a13]/70 hover:border-[#1c3a13] hover:bg-[#eeeee9]"
-                }`}
-              >
-                {f === "all" ? "All" : f === "motors" ? "🏍️ Motors" : "🚌 Buses & Trucks"}
-              </button>
-            ))}
-          </div>
-
           {/* Map mode toggle */}
           <div>
             <p className="text-xs font-medium text-[#1c3a13]/50 uppercase tracking-wide mb-2">
@@ -435,11 +378,7 @@ export default function FindDeliveryPage() {
           {/* Unit list */}
           <div>
             <p className="text-xs font-medium text-[#1c3a13]/50 uppercase tracking-wide mb-2">
-              {vehicleFilter === "motors"
-                ? `Motorbike Riders (${riders.length})`
-                : vehicleFilter === "buses"
-                ? `Buses & Trucks (${vehicles.length})`
-                : `All Delivery Units (${units.length})`}
+              Available Riders ({units.length})
             </p>
             {sorted.length === 0 ? (
               <div className="text-center py-8">
@@ -456,8 +395,7 @@ export default function FindDeliveryPage() {
                       ? haversineDistance(pickupPin.lat, pickupPin.lng, unit.latitude, unit.longitude)
                       : null;
 
-                  if (unit.category === "RIDER") {
-                    return (
+                  return (
                       <button
                         key={unit.id}
                         onClick={() => setSelectedId(selected ? null : unit.id)}
@@ -524,70 +462,6 @@ export default function FindDeliveryPage() {
                           </a>
                         )}
                       </button>
-                    );
-                  }
-
-                  // Vehicle card
-                  const emoji = VEHICLE_EMOJIS[unit.vehicleType] ?? "🚛";
-                  return (
-                    <div
-                      key={unit.id}
-                      onClick={() => setSelectedId(selected ? null : unit.id)}
-                      className={`w-full text-left rounded-2xl border p-3 transition-colors cursor-pointer ${
-                        selected
-                          ? "border-[#1c3a13] bg-[#eeeee9]"
-                          : "border-[#eeeee9] bg-[#fcfcf7] hover:border-[#1c3a13] hover:bg-[#eeeee9]"
-                      }`}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-[#eeeee9] flex items-center justify-center text-lg flex-shrink-0">
-                          {emoji}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-medium text-[#1c3a13]">
-                              {unit.vehicleType.replace(/_/g, " ")}
-                            </span>
-                            <span className="text-xs bg-[#d3fa99] text-[#1c3a13] px-1.5 py-0.5 rounded-full font-medium">
-                              Vendor
-                            </span>
-                          </div>
-                          {unit.companyName && (
-                            <p className="text-xs text-[#1c3a13]/50 truncate">{unit.companyName}</p>
-                          )}
-                          {unit.licensePlate && (
-                            <p className="text-xs text-[#1c3a13]/40 font-mono">{unit.licensePlate}</p>
-                          )}
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <OnlineIndicator lastSeen={unit.lastSeen} size="sm" />
-                            <span className="text-xs text-[#1c3a13]/40">
-                              {status === "online" ? "Online" : status === "away" ? "Recently online" : "Offline"}
-                            </span>
-                            {unit.capacity && (
-                              <span className="text-xs text-[#1c3a13]/50">· {unit.capacity} kg cap.</span>
-                            )}
-                          </div>
-                          {distFromPickup !== null && (
-                            <p className="text-xs text-[#1c3a13]/40 mt-0.5">
-                              {distFromPickup.toFixed(1)} km from pickup
-                            </p>
-                          )}
-                        </div>
-                        {selected && (
-                          <CheckCircle2 className="h-4 w-4 text-[#1c3a13] flex-shrink-0 mt-0.5" />
-                        )}
-                      </div>
-                      {unit.phone && (
-                        <a
-                          href={`tel:${unit.phone}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1 text-xs text-[#1c3a13] mt-1.5 hover:underline"
-                        >
-                          <Phone className="h-3 w-3" />
-                          {unit.phone}
-                        </a>
-                      )}
-                    </div>
                   );
                 })}
               </div>
@@ -604,10 +478,6 @@ export default function FindDeliveryPage() {
           >
             {booking
               ? "Sending request..."
-              : selectedUnit?.category === "VEHICLE"
-              ? fare
-                ? `Request Vehicle — ${formatCurrency(fare.total)}`
-                : "Request Vehicle"
               : fare
               ? `Book Rider — ${formatCurrency(fare.total)}`
               : "Book Delivery"}
@@ -624,7 +494,6 @@ export default function FindDeliveryPage() {
       <div className="flex-1 relative">
         <RiderMap
           riders={mapRiders}
-          vehicles={mapVehicles}
           pickupPin={pickupPin}
           deliveryPin={deliveryPin}
           selectedRiderId={selectedId}

@@ -19,6 +19,54 @@ export function formatDate(date: Date | string) {
   }).format(new Date(date));
 }
 
+export function formatPercent(value: number, decimals = 1) {
+  return `${value.toFixed(decimals)}%`;
+}
+
+// Post-harvest-loss research consistently points to the same root cause for
+// horticultural crops: produce that doesn't sell fast enough rots before a
+// buyer is found (APHLIS 2022; Anaba 2018 — 20-40% of Northern Ghana's fresh
+// tomato/vegetable losses trace back to exactly this). Surfacing time-to-spoil
+// as a first-class signal — instead of only showing harvest/expiry dates —
+// lets buyers self-select toward at-risk stock and lets farmers know to
+// discount or offload to a processor before it's too late.
+export type SpoilageLevel = "critical" | "urgent" | "moderate" | null;
+
+export interface SpoilageUrgency {
+  level: SpoilageLevel;
+  /** Days remaining until expiryDate; negative once past due. */
+  daysLeft: number;
+  label: string;
+}
+
+const SPOILAGE_LABELS: Record<Exclude<SpoilageLevel, null>, (days: number) => string> = {
+  critical: (days) => (days <= 0 ? "Sell today — spoilage risk" : `Sell today — ${days} day left`),
+  urgent: (days) => `Sell soon — ${days} days left`,
+  moderate: (days) => `${days} days left to sell`,
+};
+
+/**
+ * Classifies a listing's spoilage risk from its expiry date. Returns null
+ * (no badge) when there's no expiry date set or it's more than a week out —
+ * this is meant to highlight only produce that's actually at risk of going
+ * to waste, not to badge every listing.
+ */
+export function getSpoilageUrgency(
+  expiryDate: Date | string | null | undefined
+): SpoilageUrgency | null {
+  if (!expiryDate) return null;
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const daysLeft = Math.ceil((new Date(expiryDate).getTime() - Date.now()) / msPerDay);
+
+  let level: SpoilageLevel = null;
+  if (daysLeft <= 1) level = "critical";
+  else if (daysLeft <= 3) level = "urgent";
+  else if (daysLeft <= 7) level = "moderate";
+  else return null;
+
+  return { level, daysLeft, label: SPOILAGE_LABELS[level](daysLeft) };
+}
+
 export function getInitials(name: string | null | undefined) {
   if (!name?.trim()) return "?";
   return (
@@ -96,6 +144,8 @@ export const COMMON_CROPS = [
   "Garden Eggs",
   "Leafy Greens",
   "Onions",
+  "Mangoes",
+  "Watermelons",
   "Yams",
   "Rice",
   "Millet",
@@ -109,6 +159,12 @@ export const COMMON_CROPS = [
   "Sheep",
   "Goats",
 ];
+
+// Flat platform-wide cut a storage facility earns on a sale of produce it held
+// — the farmer keeps the rest. Pure bookkeeping (see Order.facilityCommission*
+// fields) — no real Paystack split happens, matching how farmer/logistics
+// payout is already manual/offline today.
+export const FACILITY_COMMISSION_RATE = 0.05;
 
 export const UNITS = ["kg", "bags", "crates", "bundles", "pieces", "tonnes", "litres"];
 

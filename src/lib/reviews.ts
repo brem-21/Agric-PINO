@@ -7,7 +7,6 @@ function appUrl() {
 }
 
 async function queueReviewRequests(
-  orderType: "ORDER" | "VENDOR_ORDER",
   orderId: string,
   pairs: { userId: string; targetId: string; targetRole: UserRole }[]
 ) {
@@ -15,7 +14,7 @@ async function queueReviewRequests(
   if (fresh.length === 0) return;
 
   await prisma.reviewRequest.createMany({
-    data: fresh.map((p) => ({ orderType, orderId, ...p })),
+    data: fresh.map((p) => ({ orderType: "ORDER", orderId, ...p })),
     skipDuplicates: true,
   });
 }
@@ -50,7 +49,7 @@ export async function requestOrderReviews(orderId: string) {
     pairs.push({ userId: order.buyerId, targetId: rider.id, targetRole: "LOGISTICS" });
   }
 
-  await queueReviewRequests("ORDER", orderId, pairs);
+  await queueReviewRequests(orderId, pairs);
 
   const link = `/review/${orderId}`;
   await notifyParties([
@@ -75,41 +74,6 @@ export async function requestOrderReviews(orderId: string) {
         type: "REVIEW_REQUEST",
         title: "Rate your buyer",
         body: `Let us know how ${order.buyer.name} did.`,
-        link,
-      },
-    },
-  ]);
-}
-
-/**
- * Called once an equipment order reaches DELIVERED. Queues a review request
- * for the customer to rate the vendor (which covers the vendor's trucks/fleet
- * too, since vehicles have no separate account of their own).
- */
-export async function requestVendorOrderReviews(vendorOrderId: string) {
-  const vendorOrder = await prisma.vendorOrder.findUnique({
-    where: { id: vendorOrderId },
-    include: {
-      customer: { select: { id: true, name: true, phone: true } },
-      vendor: { select: { userId: true, shopName: true } },
-    },
-  });
-  if (!vendorOrder) return;
-
-  await queueReviewRequests("VENDOR_ORDER", vendorOrderId, [
-    { userId: vendorOrder.customerId, targetId: vendorOrder.vendor.userId, targetRole: "VENDOR" },
-  ]);
-
-  const link = `/review/${vendorOrderId}?type=vendor`;
-  await notifyParties([
-    {
-      phone: vendorOrder.customer.phone,
-      smsMessage: `Lorgric: Your order from ${vendorOrder.vendor.shopName} has been delivered. Rate your experience: ${appUrl()}${link}`,
-      inApp: {
-        userId: vendorOrder.customer.id,
-        type: "REVIEW_REQUEST",
-        title: "Rate your equipment order",
-        body: `Let us know how ${vendorOrder.vendor.shopName} did.`,
         link,
       },
     },

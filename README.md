@@ -1,16 +1,41 @@
-# Lorgric — Farm-to-Market Platform for Ghana's Northern Savannah Zone
+# Lorgric — Reducing Post-Harvest Loss in Ghana's Northern Savannah Zone
 
 ## Overview
 
-Lorgric is a digital marketplace that connects smallholder farmers in Ghana's Northern Savannah Zone directly with buyers, while solving the two problems that make informal farm-to-market trade unreliable: **getting produce physically moved** (logistics) and **getting paid safely** (payments and trust). Alongside the produce marketplace, farmers and buyers can also buy agricultural inputs — seeds, fertilizer, tools — from registered vendors, and book independent delivery riders on demand, all inside one platform.
+**Scope statement:** We're helping tomato farmers in Ghana's Upper East Region reach wholesalers and processors before their harvest spoils, by storing it at nearby cold-chain storage facilities instead of selling within hours of harvest at whatever price is offered. The same model — book a storage facility instead of selling immediately, sell to a bulk buyer once it's safely stored — extends to grain farmers (hermetic dry storage) across the wider Northern Savannah Zone.
 
-The platform is built around five distinct user roles — **Farmer, Buyer, Vendor, Logistics Provider, and Admin** — each with a purpose-built dashboard, plus a shared identity-verification and trust layer, encrypted messaging, mobile-money payments, and an AI layer that personalizes recommendations and gives farmers market advice. Every workflow reflects the realities of the market it serves: phone-number login (not email), mobile money and cash-on-delivery as payment options, SMS as a first-class notification channel, and no-key-required weather/mapping so operating costs stay low.
+Lorgric is a digital platform built around a single mission: **cutting the post-harvest losses (PHL) that cost Northern Ghana's smallholder farmers 10–50% of every harvest**, and the country as a whole an estimated **US$1.9 billion a year** (APHLIS, 2022; WFP, 2023). Research on the region is consistent about the drivers — inadequate storage, damaged feeder roads, no cold chain, and, above all, a lack of a ready market to sell into before produce spoils. Lorgric addresses each of those directly, as a marketplace, not a report: it gets a farmer's harvest in front of a wholesaler, processor, rider, or storage facility **fast enough to sell before it rots**.
+
+Concretely, that means solving the same problems informal farm-to-market trade always runs into — **aggregation and storage** (a physical place to hold produce until a bulk buyer is found), **getting produce physically moved** (logistics), and **getting paid safely** (payments and trust) — but doing it with the post-harvest clock in mind: produce listings carry harvest and expiry dates, the marketplace can be sorted by what's most at risk of spoiling, transport is bookable on demand instead of waiting on an unreliable middleman, and a network of cold-chain/hermetic-dry storage facilities lets a farmer stop being forced to sell (or lose) their harvest the moment it's picked.
+
+The platform is built around five distinct user roles — **Farmer, Buyer, Storage Facility, Logistics Provider, and Admin** — each with a purpose-built dashboard, plus a shared identity-verification and trust layer, encrypted messaging, mobile-money payments, and an AI layer that personalizes recommendations and gives farmers market advice. Every workflow reflects the realities of the market it serves: phone-number login (not email), mobile money and cash-on-delivery as payment options, SMS as a first-class notification channel, and no-key-required weather/mapping so operating costs stay low.
 
 This document walks through every feature currently in the product, organized by who uses it, and explains why it matters — written for stakeholders evaluating the platform's readiness and value, not just its code.
 
+### Why post-harvest loss, and why this matters
+
+- **10–50%** of smallholder harvests in Northern Ghana are lost after production, depending on crop and handling (APHLIS, 2022; FAO, 2019).
+- **US$1.9 billion** is lost nationally each year to post-harvest inefficiencies (WFP, 2023).
+- Fresh horticultural crops — tomatoes, mangoes, watermelons, leafy vegetables — lose **20–50%**, mostly to heat, bruising in transit, and no cold storage. A study of the **Upper East tomato value chain** (Anaba, 2018) — Lorgric's flagship crop and corridor — found losses compounding at *every* stage: ~10–13% on the farm, **26%** with wholesalers, **20%** at retail, driven above all by a lack of a ready market and no cold-chain storage.
+- Grains fare better but aren't immune: maize loses ~15% to poor drying and storage; sorghum and millet lose ~12.4% in aggregate (APHLIS, 2022).
+- **The gap is closeable, and fast**: a field intervention on Northern Ghana's sorghum value chain — better harvesting, tarpaulin drying, mechanized threshing, faster market access — cut losses from **12.4% to 6.6%** in a single season and nearly doubled participating farmers' income (APHLIS/VCA4D, 2022). Lorgric is built to deliver that same shift at platform scale: storage facilities that buy time, reliable transport, and direct access to wholesale/processor buyers.
+
+### Feature → cause mapping
+
+| Post-harvest loss cause (from the research) | How Lorgric addresses it |
+|---|---|
+| No ready market — surplus rots unsold, especially at seasonal gluts | Direct farmer↔buyer↔processor marketplace; a `WHOLESALER`/`PROCESSOR` buyer type for bulk sales |
+| Produce sits too long before a sale is found | Listings carry harvest/expiry dates; the marketplace can be sorted by **spoilage urgency**, and farmers see an at-a-glance spoilage-risk flag on their own listings |
+| No cold chain, no hermetic/dry storage for surplus produce | A network of **Storage Facilities** (cold-chain and hermetic-dry) that farmers book a drop-off slot at instead of selling immediately |
+| Poor/damaged feeder roads bruise and delay produce in transit | On-demand logistics booking, real-time tracking, and multi-rider relay handoffs for long hauls |
+| Limited access to post-harvest handling knowledge/extension services | AI layer gives farmers market and handling advice |
+| Fraud, spoiled trust, and payment risk discourage timely, arm's-length sales | Ghana Card verification, encrypted messaging, mobile money + cash-on-delivery, and a two-sided rating system |
+
 **Quick facts:**
 - **5 user roles**, each with a dedicated portal and dashboard
-- **2 marketplaces**: produce (farmer → buyer) and agricultural inputs (vendor → farmer/buyer)
+- **Storage-facility network**: farmers book a drop-off at a cold-chain or hermetic-dry facility instead of selling immediately; the facility takes a flat **5% commission** on any resulting sale, the farmer keeps 95%
+- **Spoilage-aware marketplace**: listings sortable by how soon they need to sell, with visual urgency flags for buyers and farmers alike, and a "Stored at [Facility]" badge once produce is in storage
+- **B2B-first buyer types**: Wholesaler and Processor lead the buyer segment, alongside Retailer, Restaurant, Exporter, and Household
 - **2 payment paths**: MTN/Telecel mobile money (via Paystack) or cash-on-delivery
 - **AI-personalized** buyer recommendations and farmer market insights
 - **Paid identity verification** (Ghana Card) gates the ability to sell or accept delivery jobs
@@ -26,7 +51,7 @@ This document walks through every feature currently in the product, organized by
 2. [Trust & Identity: Registration, Login, and Verification](#2-trust--identity-registration-login-and-verification)
 3. [Farmer Portal](#3-farmer-portal)
 4. [Buyer Portal](#4-buyer-portal)
-5. [Vendor Portal & the Equipment Marketplace](#5-vendor-portal--the-equipment-marketplace)
+5. [Storage Facility Portal — the Aggregation Point](#5-storage-facility-portal--the-aggregation-point)
 6. [Transport & Logistics — Booking, Fulfilling, and Tracking Deliveries](#6-transport--logistics--booking-fulfilling-and-tracking-deliveries)
 7. [Admin Portal — the Platform's Control Room](#7-admin-portal--the-platforms-control-room)
 8. [Shared Platform Features](#8-shared-platform-features)
@@ -40,13 +65,11 @@ This document walks through every feature currently in the product, organized by
 
 | Role | Who they are | What they do on the platform |
 |---|---|---|
-| **Farmer** | Smallholder producers | List produce for sale, fulfill orders, request transport, buy inputs |
-| **Buyer** | Individuals or businesses purchasing produce | Browse/search the marketplace, place orders, pay, track delivery |
-| **Vendor** | Agro-input shop owners (seeds, fertilizer, tools, equipment) | Run a storefront on the Equipment Marketplace, fulfill orders, manage a delivery fleet |
+| **Farmer** | Smallholder producers | List produce for sale, book a storage-facility drop-off, request transport |
+| **Buyer** | Wholesalers, processors, retailers, restaurants, exporters, households | Browse/search the marketplace, place orders, pay, track delivery |
+| **Storage Facility** | Cold-chain or hermetic-dry storage operators | Manage facility profile/location, confirm/reject farmer drop-off bookings, hold and help sell produce, earn a 5% commission |
 | **Logistics Provider** | Independent delivery riders | Accept and fulfill transport jobs, relay deliveries, earn per job |
-| **Admin** | Platform operators | Moderate listings, review verifications, resolve disputes, monitor analytics |
-
-A single account can hold more than one role's privileges — for example, a Farmer can also be flagged as a Vendor (`isVendor`) to run an input shop alongside their farm, and both Farmers and Buyers can purchase from the Equipment Marketplace regardless of their primary role.
+| **Admin** | Platform operators | Moderate listings and storage facilities, review verifications, resolve disputes, monitor analytics |
 
 Every route in the app is protected twice — once at the network edge (before any page even renders) and again inside each page's own data-loading logic — so a Buyer cannot load a Farmer's dashboard, and vice versa, simply by guessing a URL. Anyone who fails a role check lands on a clear "Access Denied" screen with options to go back, go home, or sign in as someone else.
 
@@ -57,7 +80,7 @@ Every route in the app is protected twice — once at the network edge (before a
 Trust and identity are treated as first-class product features, not an afterthought — this is what makes it safe to move real money through the platform.
 
 ### Multi-role registration with phone OTP verification
-A 3-step signup wizard: **(1)** pick a role, **(2)** fill role-specific details — every role provides full name, phone number, password, region, and Ghana Card number/name/residence location up front, with extra fields per role (farm details for Farmers, business type for Buyers, license plate for Logistics, shop name for Vendors, a mandatory ID photo upload for anyone registering as Admin), **(3)** verify a 6-digit SMS one-time code (10-minute expiry, resend available) before the account is actually created.
+A 3-step signup wizard: **(1)** pick a role, **(2)** fill role-specific details — every role provides full name, phone number, password, region, and Ghana Card number/name/residence location up front, with extra fields per role (farm details for Farmers, business type for Buyers — Wholesaler leads the list, license plate for Logistics, facility name for Storage Facilities, a mandatory ID photo upload for anyone registering as Admin), **(3)** verify a 6-digit SMS one-time code (10-minute expiry, resend available) before the account is actually created.
 
 **Why it matters:** collecting identity data at signup — not as an optional afterthought — means the trust layer is built into the platform from day one, and OTP verification stops bot/fake signups before they ever reach the database.
 
@@ -67,7 +90,7 @@ Users log in with **phone number + password**, not email — because that's how 
 **Why it matters:** protects accounts (and the money tied to them) from automated credential-stuffing attacks, without requiring the email address that a meaningful share of users in this market may not have.
 
 ### Paid Ghana Card identity verification
-A second, **paid** trust tier, separate from free registration: the user submits their Ghana Card number, the name on the card, a residence location, and a photo of the card (front, optionally back), then pays a verification fee — **GHS 50 for Farmers and Vendors, GHS 30 for Logistics Providers, GHS 10 for Buyers** — through the same mobile-money payment flow used elsewhere on the platform. An admin then manually reviews the submitted ID photo and approves or rejects the request. Only once both the payment clears **and** an admin approves does the account become "Verified."
+A second, **paid** trust tier, separate from free registration: the user submits their Ghana Card number, the name on the card, a residence location, and a photo of the card (front, optionally back), then pays a verification fee — **GHS 50 for Farmers and Storage Facilities, GHS 30 for Logistics Providers, GHS 10 for Buyers** — through the same mobile-money payment flow used elsewhere on the platform. An admin then manually reviews the submitted ID photo and approves or rejects the request. Only once both the payment clears **and** an admin approves does the account become "Verified."
 
 Verification isn't just a badge — it's a functional gate: **farmers cannot publish a produce listing**, and **logistics providers cannot accept a delivery job**, until they're verified.
 
@@ -90,7 +113,9 @@ At-a-glance stat tiles (active listings, pending orders, completed orders, total
 ### Produce listing management
 Farmers create listings with crop type (autocomplete from common Ghanaian crops), category, quantity, unit, price, description, harvest/expiry dates, location, and up to 5 photos (uploaded to Cloudinary). Every new listing is invisible to buyers until an **admin approves it** — the listing's own lifecycle status (Active/Draft/Sold/Expired) is tracked separately from its moderation status (Pending/Approved/Rejected), so a farmer's own listings page clearly distinguishes "this is live" from "this is still awaiting review."
 
-**Why it matters:** this is the core reason a farmer joins the platform — the ability to reach buyers directly — while the moderation gate stops fraudulent or spam listings from ever reaching the storefront.
+Each farmer's own listings table also surfaces a **spoilage-risk indicator** — computed from the listing's expiry date — the moment produce is within a week of spoiling, escalating from "days left to sell" to "sell soon" to "sell today," so a farmer knows to drop the price or reach out to a bulk/processor buyer before the stock is a total loss instead of finding out after the fact.
+
+**Why it matters:** this is the core reason a farmer joins the platform — the ability to reach buyers directly — while the moderation gate stops fraudulent or spam listings from ever reaching the storefront, and the spoilage-risk flag turns "produce quietly rotting unsold," the single most common driver of post-harvest loss in the research, into something a farmer can act on in time.
 
 ### Order management with a live status workflow
 A live-updating (polling every 20 seconds) table of incoming orders, each advanceable through its fulfillment lifecycle with a single button — Confirm Order → Mark Ready for Pickup — with rows visibly highlighting when a status just changed. Every order links to a printable delivery slip, and once delivered, to a one-click shortcut to rate the buyer.
@@ -102,10 +127,10 @@ Farmers can request a rider for any paid order — pre-filled with the listing's
 
 **Why it matters:** solves last-mile delivery — arguably Northern Ghana's single biggest farm-to-market bottleneck — inside the platform, instead of leaving farmers to arrange transport informally and unreliably.
 
-### Buying agricultural inputs ("Purchases")
-Farmers are also buyers on the separate Equipment Marketplace (seeds, tools, fertilizer sold by Vendors) — this section shows their input-purchase history with the ability to cancel a pending order or rate the vendor after delivery.
+### Booking storage instead of selling immediately
+A farmer doesn't have to sell (or hold) produce alone: a map of approved storage facilities — filterable by cold-chain vs. hermetic-dry, with capacity, accepted crop categories, and rating shown per facility — lets a farmer pick one nearby and submit a drop-off booking (crop, quantity, asking price, scheduled drop-off date/time). Bookings are tracked through their own lifecycle (Pending → Confirmed/Rejected → Dropped Off, or Returned to Farmer if reclaimed before it sells), visible on a "My Bookings" page.
 
-**Why it matters:** recognizes that farmers are equipment buyers too, so one account serves both sides of a farmer's needs — selling their harvest and buying what they need to grow it.
+**Why it matters:** this is the platform's direct answer to "surplus produce rots because there's no ready market" — instead of a forced sale within hours of harvest, a farmer can buy time at a facility built for exactly that crop's storage needs, and reach a wholesaler or processor once it's safely stored, at a flat 5% commission to the facility.
 
 ### Complaints
 A structured incident-report form (category: Fraud, Quality Issue, Delivery Problem, Payment Dispute, Harassment, Technical, Other, plus free-text description), tracked through an admin resolution workflow.
@@ -122,12 +147,12 @@ The same at-a-glance stat-tile pattern (total orders, active orders, total spent
 **Why it matters:** turns the buyer's home screen from a passive order list into something that proactively works for them.
 
 ### Marketplace browse & search
-A full storefront experience: debounced text search, multi-select category filters, min/max price range, region filter, and pagination — all reflecting only approved, active listings. Each listing card shows a photo slideshow, price, quantity available, harvest date, the farmer's name and farm, a live follow-count, and one-click shortcuts to message the farmer or place an order.
+A full storefront experience: debounced text search, multi-select category filters, min/max price range, region filter, a **"spoiling soon — sell first" sort**, and pagination — all reflecting only approved, active listings. Each listing card shows a photo slideshow, price, quantity available, harvest date, a spoilage-urgency badge when the produce is within a week of its expiry date, a **"Stored at [Facility Name]"** badge when the produce is being held at a storage facility, the farmer's name and farm, a live follow-count, and one-click shortcuts to message the farmer or place an order.
 
-**Why it matters:** this is the buyer's core discovery tool — real filtering (by price, category, region) is what turns a scattered set of smallholder farmers into something actually shoppable.
+**Why it matters:** this is the buyer's core discovery tool — real filtering (by price, category, region) is what turns a scattered set of smallholder farmers into something actually shoppable, and the urgency sort lets buyers actively route demand toward the produce most at risk of being lost, instead of that surplus quietly rotting unsold.
 
 ### Listing detail & one-flow ordering
-A full listing page with a photo slideshow, the farmer's profile card (star rating, farm size, bio, verified badge), and an order panel with a quantity stepper capped at real available stock, a live running total, and a "Place Order" action. After placing an order, a payment-choice panel appears immediately — mobile money or cash-on-delivery (if the farmer accepts it).
+A full listing page with a photo slideshow, the farmer's profile card (star rating, farm size, bio, verified badge), a spoilage-urgency banner when the listing is nearing its expiry date, and — when the produce is stored at a facility — the facility's name and location shown as the effective pickup point, alongside an order panel with a quantity stepper capped at real available stock, a live running total, and a "Place Order" action. Buyers can still message the farmer directly at any time, whether or not the produce is currently in storage. After placing an order, a payment-choice panel appears immediately — mobile money or cash-on-delivery (if the farmer accepts it).
 
 **Why it matters:** turns browsing into a completed transaction without ever leaving the listing page.
 
@@ -141,53 +166,43 @@ The buyer's mirror of the farmer's order table: farm name and location, whether 
 
 **Why it matters:** gives buyers delivery-app-style visibility into what is otherwise an informal produce trade.
 
-### Purchase history (produce + equipment)
-A tabbed view separating produce orders from equipment-marketplace purchases, with cancel and rate actions on the equipment side.
-
-**Why it matters:** one consolidated history across both marketplaces the platform offers.
-
 ---
 
-## 5. Vendor Portal & the Equipment Marketplace
+## 5. Storage Facility Portal — the Aggregation Point
 
-Vendors sell farm inputs — seeds, fertilizer, pesticides, tools, irrigation equipment, animal feed, storage — through a catalog and order system that runs in parallel to the produce marketplace.
+Storage facilities are the platform's answer to "surplus produce rots because there's no ready market": a physical cold-chain or hermetic-dry site that a farmer books a drop-off slot at instead of selling immediately. Once produce is dropped off, the facility becomes the effective point of sale (or pickup) shown on the marketplace, and earns a flat **5% commission** on any resulting sale — the farmer keeps the remaining 95%. This is pure bookkeeping (see [Section 8](#8-shared-platform-features)); no real money-splitting happens at the payment layer, consistent with how farmer/logistics payout already works today.
 
-### Vendor dashboard
-Revenue, order counts by status, top-selling products, and a verification-status banner.
+### Storage facility dashboard
+Commission earned, total sales facilitated, current active listings in storage, and counts of pending/confirmed bookings — plus the shared verification-status banner.
 
-**Why it matters:** a real-time performance snapshot for shop owners without digging through order lists manually.
+**Why it matters:** a real-time view of what's earning the facility money and what needs action, without digging through booking lists manually.
 
-### Product catalog management
-Vendors list products with name, category (9 types), price, unit, and stock, and can toggle availability or delete listings. Adding a new product is blocked with a clear "verify your account" prompt until the vendor is identity-verified.
+### Facility profile & location
+Facility name, description, storage type(s) — **Cold Chain** for perishables like tomatoes, mangoes, watermelons, and leafy greens, or **Hermetic/Dry** (PICS-bag style) for grains and legumes like maize, sorghum, millet, rice, cowpea, soybean, and groundnut — advisory capacity in tonnes, accepted produce categories, operating hours, and a location set by GPS or by picking a point on the map. Editing the location re-queues the facility for admin approval, mirroring how a relisted address needs re-vetting.
 
-**Why it matters:** lets vendors self-serve their entire storefront while enforcing the same paid-verification trust gate that applies to selling anywhere else on the platform.
+**Why it matters:** this is the information a farmer sees on the map before booking — accurate storage type and location are what makes the booking decision meaningful.
 
-### Order fulfillment
-A live-polling (20s) order queue split into active and completed sections, with a single-button status advance through the fulfillment lifecycle (Pending → Confirmed → Processing → Shipped → Delivered) and full visibility into customer contact and line items.
+### Managing incoming bookings
+A queue of farmer drop-off requests the facility can Confirm, Reject, mark **Dropped Off** (which auto-creates the produce listing if one doesn't exist yet, sets it live pending the usual admin moderation, and links it to the facility), or **Return to Farmer** (the clean inverse — the farmer reclaims produce before it sells, and the listing's facility link clears).
 
-**Why it matters:** vendors process incoming orders without leaving the page or manually refreshing.
+**Why it matters:** gives the facility operator full control over the physical handoff — nothing is marked "in storage" until the operator confirms produce has actually physically arrived.
 
-### Fleet management
-Vendors can register their own delivery vehicles (bus, minibus, pickup, van) with driver name, phone, and capacity, toggle availability, and share live GPS location.
+### Inventory
+Every listing currently linked to the facility, with status, moderation state, quantity, and the farmer's contact — what's actually on-site and still sellable, against the facility's advisory capacity.
 
-**Why it matters:** lets vendors run their own last-mile delivery instead of depending entirely on independent logistics riders — useful for bulkier input orders.
+**Why it matters:** lets an operator sanity-check they're not overcommitting physical space before confirming another booking.
 
-### The Equipment Marketplace (buyer-facing storefront)
-This is the customer-facing side of the vendor system — despite the name, it's not farm-machinery rental, it's where any Farmer or Buyer shops for inputs. Full search and category filtering, product cards with image slideshows, an add-to-cart flow with a quantity stepper and slide-out cart drawer, an optional delivery address, and a checkout that intelligently splits a multi-vendor cart into one separate order per vendor so payment and fulfillment never get muddled across shops. A "Message Vendor" quick-contact option sits on every product.
-
-**Why it matters:** gives every farmer and buyer a place to buy the inputs they need the same way they'd buy produce — in one platform, with checkout logic that correctly handles buying from multiple shops at once.
-
-### Vendor complaints
+### Facility complaints
 The same structured incident-report form available to every role.
 
 ---
 
 ## 6. Transport & Logistics — Booking, Fulfilling, and Tracking Deliveries
 
-This is the full loop that solves physical delivery, spanning the requester side (Farmers, Buyers, or anyone needing something moved) and the provider side (Logistics Providers).
+This is the full loop that solves physical delivery, spanning the requester side (Farmers, Buyers, or anyone needing something moved) and the provider side (Logistics Providers). Any pickup or delivery to/from a storage facility uses this same general rider marketplace — facilities don't run their own delivery fleet.
 
 ### Booking a delivery (Find a Rider)
-A live map-based booking screen showing every currently available rider and vendor-owned vehicle, with real online/away/offline status, filterable to motorbikes only or buses/trucks only. The requester drops pickup and delivery pins on the map (or uses their current GPS location), enters cargo weight, and sees a live, transparent fare estimate — base fare plus distance and weight components plus an ETA — *before* booking.
+A live map-based booking screen showing every currently available rider with real online/away/offline status. The requester drops pickup and delivery pins on the map (or uses their current GPS location), enters cargo weight, and sees a live, transparent fare estimate — base fare plus distance and weight components plus an ETA — *before* booking.
 
 **Why it matters:** turns "I need something moved" into a self-serve, price-transparent booking experience similar to a ride-hailing app, instead of requiring a phone call to a dispatcher.
 
@@ -279,7 +294,7 @@ Buyers pay for produce orders and transport bookings via **MTN Mobile Money or T
 **Why it matters:** meets buyers and farmers where they already transact — mobile money, not cards — which is the difference between a payment feature people actually use and one they don't; the cash fallback ensures no sale is lost just because a buyer prefers to pay on arrival.
 
 ### Reviews & ratings
-Once an order (produce or equipment) is marked delivered, the platform automatically creates review requests for whoever still owes a rating — a farmer rates their buyer, a buyer rates their farmer or vendor — and blocks reviewing before delivery or reviewing twice.
+Once an order is marked delivered, the platform automatically creates review requests for whoever still owes a rating — a farmer rates their buyer, a buyer rates their farmer — and blocks reviewing before delivery or reviewing twice.
 
 **Why it matters:** builds the star-rating trust signal shown throughout the marketplace that lets a buyer judge a farmer's reliability before ever placing an order.
 

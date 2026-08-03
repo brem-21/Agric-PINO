@@ -13,7 +13,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Phone,
-  Store,
+  Warehouse,
   ShieldCheck,
   Upload,
 } from "lucide-react";
@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/select";
 import { NORTHERN_GHANA_REGIONS } from "@/lib/utils";
 
-type Role = "FARMER" | "BUYER" | "LOGISTICS" | "VENDOR" | "ADMIN";
+type Role = "FARMER" | "BUYER" | "LOGISTICS" | "STORAGE_FACILITY" | "ADMIN";
 
 interface FormData {
   name: string;
@@ -49,7 +49,7 @@ interface FormData {
   businessType: string;
   companyName: string;
   licensePlate: string;
-  shopName: string;
+  facilityName: string;
 }
 
 const ROLE_OPTIONS: {
@@ -77,10 +77,10 @@ const ROLE_OPTIONS: {
     icon: Truck,
   },
   {
-    value: "VENDOR",
-    label: "Equipment Vendor",
-    description: "Sell farm tools, seeds, fertilizers and equipment to farmers",
-    icon: Store,
+    value: "STORAGE_FACILITY",
+    label: "Storage Facility",
+    description: "Operate a cold-chain or dry storage site — take farmer drop-offs and earn a 5% commission on sales",
+    icon: Warehouse,
   },
   {
     value: "ADMIN",
@@ -91,9 +91,10 @@ const ROLE_OPTIONS: {
 ];
 
 const BUSINESS_TYPES = [
+  { value: "WHOLESALER", label: "Wholesaler (bulk resale)" },
+  { value: "PROCESSOR", label: "Food Processor" },
   { value: "RETAILER", label: "Retailer" },
   { value: "RESTAURANT", label: "Restaurant" },
-  { value: "PROCESSOR", label: "Food Processor" },
   { value: "EXPORTER", label: "Exporter" },
   { value: "HOUSEHOLD", label: "Household" },
 ];
@@ -132,7 +133,7 @@ export default function RegisterPage() {
     businessType: "",
     companyName: "",
     licensePlate: "",
-    shopName: "",
+    facilityName: "",
   });
 
   function updateForm(field: keyof FormData, value: string) {
@@ -206,8 +207,8 @@ export default function RegisterPage() {
     } else if (role === "LOGISTICS") {
       payload.companyName = form.companyName || undefined;
       payload.licensePlate = form.licensePlate || undefined;
-    } else if (role === "VENDOR") {
-      payload.shopName = form.shopName || undefined;
+    } else if (role === "STORAGE_FACILITY") {
+      payload.facilityName = form.facilityName || undefined;
     }
 
     setLoading(true);
@@ -413,8 +414,8 @@ export default function RegisterPage() {
                       ? "Farmer"
                       : role === "BUYER"
                       ? "Buyer"
-                      : role === "VENDOR"
-                      ? "Equipment Vendor"
+                      : role === "STORAGE_FACILITY"
+                      ? "Storage Facility"
                       : role === "ADMIN"
                       ? "Admin"
                       : "Logistics Provider"}{" "}
@@ -707,23 +708,26 @@ export default function RegisterPage() {
                   </div>
                 )}
 
-                {/* Vendor-specific */}
-                {role === "VENDOR" && (
+                {/* Storage facility-specific */}
+                {role === "STORAGE_FACILITY" && (
                   <div className="space-y-4 rounded-lg border border-[#eeeee9] bg-[#eeeee9] p-4">
                     <div className="flex items-center gap-2">
-                      <Store className="h-5 w-5 text-[#1c3a13]" />
-                      <p className="text-sm font-medium text-[#1c3a13]">Shop Information</p>
+                      <Warehouse className="h-5 w-5 text-[#1c3a13]" />
+                      <p className="text-sm font-medium text-[#1c3a13]">Facility Information</p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="shopName" className="text-[#1c3a13] text-sm font-medium">Shop Name</Label>
+                      <Label htmlFor="facilityName" className="text-[#1c3a13] text-sm font-medium">Facility Name</Label>
                       <Input
-                        id="shopName"
-                        placeholder="e.g. AgroSupplies Ghana"
-                        value={form.shopName}
-                        onChange={(e) => updateForm("shopName", e.target.value)}
+                        id="facilityName"
+                        placeholder="e.g. Bolgatanga Cold Storage"
+                        value={form.facilityName}
+                        onChange={(e) => updateForm("facilityName", e.target.value)}
                         className="bg-[#fcfcf7] border border-[#eeeee9] rounded-lg focus:ring-[#1c3a13]"
                       />
                     </div>
+                    <p className="text-xs text-[#1c3a13]/50">
+                      You&apos;ll set your location, storage type, and accepted crops after signing in.
+                    </p>
                   </div>
                 )}
 

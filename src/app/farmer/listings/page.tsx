@@ -2,8 +2,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { PlusCircle, Pencil, Trash2 } from "lucide-react";
+import { formatCurrency, formatDate, getSpoilageUrgency } from "@/lib/utils";
+import { PlusCircle, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -83,6 +83,7 @@ export default async function FarmerListingsPage() {
                   <th className="text-right px-6 py-3 font-medium text-[#1c3a13]">Quantity</th>
                   <th className="text-right px-6 py-3 font-medium text-[#1c3a13]">Price/Unit</th>
                   <th className="text-left px-6 py-3 font-medium text-[#1c3a13]">Status</th>
+                  <th className="text-left px-6 py-3 font-medium text-[#1c3a13]">Spoilage Risk</th>
                   <th className="text-left px-6 py-3 font-medium text-[#1c3a13]">Created</th>
                   <th className="text-right px-6 py-3 font-medium text-[#1c3a13]">Actions</th>
                 </tr>
@@ -119,6 +120,29 @@ export default async function FarmerListingsPage() {
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[listing.status] ?? "bg-[#eeeee9] text-[#1c3a13]"}`}>
                           {listing.status}
                         </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {listing.status === "ACTIVE" && getSpoilageUrgency(listing.expiryDate) ? (
+                        (() => {
+                          const urgency = getSpoilageUrgency(listing.expiryDate)!;
+                          return (
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                urgency.level === "critical"
+                                  ? "bg-red-100 text-red-700"
+                                  : urgency.level === "urgent"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-yellow-50 text-yellow-700"
+                              }`}
+                            >
+                              <AlertTriangle className="h-3 w-3" />
+                              {urgency.label}
+                            </span>
+                          );
+                        })()
+                      ) : (
+                        <span className="text-[#1c3a13]/30 text-xs">—</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-[#1c3a13]/50">{formatDate(listing.createdAt)}</td>

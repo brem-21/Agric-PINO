@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Search, X, MapPin, Package, Calendar, ChevronLeft, ChevronRight, SlidersHorizontal, ShoppingCart } from "lucide-react";
+import { Search, X, MapPin, Package, Calendar, ChevronLeft, ChevronRight, SlidersHorizontal, ShoppingCart, Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PRODUCE_CATEGORIES, NORTHERN_GHANA_REGIONS, formatCurrency, formatDate } from "@/lib/utils";
+import { PRODUCE_CATEGORIES, NORTHERN_GHANA_REGIONS, formatCurrency, formatDate, getSpoilageUrgency } from "@/lib/utils";
 import { FollowButton } from "@/components/shared/follow-button";
 import { ProductImageSlideshow } from "@/components/shared/product-image-slideshow";
 import { QuickMessageDialog } from "@/components/shared/quick-message-dialog";
@@ -48,6 +48,7 @@ interface Listing {
   location: string;
   status: string;
   createdAt: string;
+  storageFacility: { id: string; name: string; location: string; storageTypes: string[] } | null;
 }
 
 interface Pagination {
@@ -105,6 +106,7 @@ function ListingCard({
   const catLabel = CATEGORY_LABEL[listing.category] ?? listing.category;
   const farmName = listing.farmer.farmerProfile?.farmName ?? listing.farmer.name;
   const farmerLocation = listing.farmer.farmerProfile?.location ?? listing.location;
+  const urgency = getSpoilageUrgency(listing.expiryDate);
 
   return (
     <div className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] overflow-hidden flex flex-col hover:border-[#1c3a13] transition-colors group">
@@ -119,6 +121,21 @@ function ListingCard({
         <div className="absolute top-2 left-2 z-20">
           <Badge variant="success" className="text-xs">{catLabel}</Badge>
         </div>
+        {urgency && (
+          <div className="absolute top-2 right-2 z-20">
+            <Badge
+              className={`text-xs ${
+                urgency.level === "critical"
+                  ? "bg-red-100 text-red-700"
+                  : urgency.level === "urgent"
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-yellow-50 text-yellow-700"
+              }`}
+            >
+              {urgency.label}
+            </Badge>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -146,6 +163,13 @@ function ListingCard({
           <MapPin className="h-4 w-4 text-[#1c3a13]/40 flex-shrink-0" />
           <span className="truncate">{farmerLocation}</span>
         </div>
+
+        {listing.storageFacility && (
+          <div className="flex items-center gap-1.5 text-xs text-[#1c3a13]/70 bg-[#eeeee9] rounded-full px-2.5 py-1 w-fit">
+            <Warehouse className="h-3.5 w-3.5 text-[#1c3a13]/50 flex-shrink-0" />
+            <span className="truncate">Stored at {listing.storageFacility.name}</span>
+          </div>
+        )}
 
         {/* Farmer */}
         <div className="flex items-center gap-2 pt-2 border-t border-[#eeeee9]">
@@ -213,6 +237,7 @@ export default function MarketplacePage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [maxPriceInput, setMaxPriceInput] = useState("");
   const [region, setRegion] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
   const latestRequestId = useRef(0);
 
@@ -229,6 +254,7 @@ export default function MarketplacePage() {
       if (minPrice) params.set("minPrice", minPrice);
       if (maxPrice) params.set("maxPrice", maxPrice);
       if (region && region !== "all") params.set("region", region);
+      if (sortBy === "urgency") params.set("sortBy", "urgency");
       params.set("page", String(page));
       params.set("limit", "12");
 
@@ -261,7 +287,7 @@ export default function MarketplacePage() {
       if (requestId === latestRequestId.current) setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, selectedCategories, minPrice, maxPrice, region, page, session?.user?.id]);
+  }, [search, selectedCategories, minPrice, maxPrice, region, sortBy, page, session?.user?.id]);
 
   useEffect(() => {
     fetchListings();
@@ -466,7 +492,7 @@ export default function MarketplacePage() {
           {/* Main Content */}
           <div className="flex-1 min-w-0 space-y-5">
             {/* Results header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <h1 className="text-xl font-light text-[#1c3a13] tracking-tight">Marketplace</h1>
                 <p className="text-sm text-[#1c3a13]/50">
@@ -474,6 +500,15 @@ export default function MarketplacePage() {
                   {search && <span className="ml-1">for &ldquo;{search}&rdquo;</span>}
                 </p>
               </div>
+              <Select value={sortBy} onValueChange={(v) => { setSortBy(v); setPage(1); }}>
+                <SelectTrigger className="w-[220px] bg-[#fcfcf7] border-[#eeeee9] focus:ring-[#1c3a13]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest first</SelectItem>
+                  <SelectItem value="urgency">Spoiling soon — sell first</SelectItem>
+                </SelectContent>
+              </Select>
               {hasActiveFilters && (
                 <div className="flex flex-wrap gap-1.5">
                   {selectedCategories.map((c) => (

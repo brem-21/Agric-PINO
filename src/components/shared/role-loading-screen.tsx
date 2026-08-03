@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Leaf } from "lucide-react";
 
-export type LoadingRole = "FARMER" | "BUYER" | "LOGISTICS" | "VENDOR" | "ADMIN";
+export type LoadingRole = "FARMER" | "BUYER" | "LOGISTICS" | "STORAGE_FACILITY" | "ADMIN";
 
 interface RoleLoadingScreenProps {
   role: LoadingRole;
@@ -35,10 +35,10 @@ const THEMES: Record<
     login: ["Planning your routes…", "Checking pickups…", "Time to ride!"],
     logout: ["Clocking out…", "Rest up, rider!"],
   },
-  VENDOR: {
+  STORAGE_FACILITY: {
     bar: "bg-[#d3fa99]",
-    login: ["Opening your shop…", "Loading inventory…", "Ready for business!"],
-    logout: ["Closing shop…", "See you tomorrow!"],
+    login: ["Opening the facility…", "Checking bookings…", "Ready to receive produce!"],
+    logout: ["Locking up…", "See you tomorrow!"],
   },
   ADMIN: {
     bar: "bg-[#d3fa99]",
@@ -63,9 +63,9 @@ const ROLE_PHOTOS: Record<LoadingRole, { src: string; alt: string }> = {
     src: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/An_okada_man_with_his_passenger_that_just_alighted.jpg/960px-An_okada_man_with_his_passenger_that_just_alighted.jpg",
     alt: "Motorbike rider ready for a delivery run",
   },
-  VENDOR: {
-    src: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Knapsack_sprayer.jpg/960px-Knapsack_sprayer.jpg",
-    alt: "Farm equipment ready to stock a shop",
+  STORAGE_FACILITY: {
+    src: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Vegetable_Seller_Tamale%2C_Northern_Ghana.jpg/960px-Vegetable_Seller_Tamale%2C_Northern_Ghana.jpg",
+    alt: "Produce ready for storage and sale at a market in Northern Ghana",
   },
   ADMIN: {
     src: "https://images.unsplash.com/photo-1759752394755-1241472b589d?w=800&q=80",

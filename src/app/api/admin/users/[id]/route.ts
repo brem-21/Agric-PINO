@@ -15,7 +15,6 @@ const USER_SELECT = {
   isActive: true,
   isVerified: true,
   verifiedAt: true,
-  isVendor: true,
   ghanaCardNumber: true,
   ghanaCardName: true,
   residenceLocation: true,
@@ -24,7 +23,7 @@ const USER_SELECT = {
   farmerProfile: true,
   buyerProfile: true,
   logisticsProfile: true,
-  vendorProfile: true,
+  storageFacilityProfile: true,
   _count: { select: { listings: true, buyerOrders: true, farmerOrders: true, complaints: true } },
 } as const;
 

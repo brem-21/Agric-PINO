@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
         image: true,
         role: true,
         farmerProfile: { select: { farmName: true } },
-        vendorProfile: { select: { shopName: true } },
+        storageFacilityProfile: { select: { name: true } },
         buyerProfile: { select: { businessName: true } },
       },
     });
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       image: true,
       role: true,
       farmerProfile: { select: { farmName: true } },
-      vendorProfile: { select: { shopName: true } },
+      storageFacilityProfile: { select: { name: true } },
       buyerProfile: { select: { businessName: true } },
     },
     take: 8,

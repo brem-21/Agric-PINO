@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export type DeliveryUnitCategory = "RIDER" | "VEHICLE";
+export type DeliveryUnitCategory = "RIDER";
 
 export interface DeliveryUnit {
   id: string;
@@ -29,29 +29,21 @@ function statusOrder(lastSeen: Date | null): number {
 }
 
 export async function GET() {
-  const [profiles, vehicles] = await Promise.all([
-    prisma.logisticsProfile.findMany({
-      where: { isAvailable: true },
-      include: {
-        user: {
-          select: {
-            name: true,
-            phone: true,
-            lastSeen: true,
-            latitude: true,
-            longitude: true,
-            isVerified: true,
-          },
+  const profiles = await prisma.logisticsProfile.findMany({
+    where: { isAvailable: true },
+    include: {
+      user: {
+        select: {
+          name: true,
+          phone: true,
+          lastSeen: true,
+          latitude: true,
+          longitude: true,
+          isVerified: true,
         },
       },
-    }),
-    prisma.vendorVehicle.findMany({
-      where: { isAvailable: true },
-      include: {
-        vendor: { select: { shopName: true } },
-      },
-    }),
-  ]);
+    },
+  });
 
   const riders: DeliveryUnit[] = profiles.map((p) => ({
     id: p.id,
@@ -70,24 +62,7 @@ export async function GET() {
     isVerified: p.user.isVerified,
   }));
 
-  const vendorUnits: DeliveryUnit[] = vehicles.map((v) => ({
-    id: v.id,
-    category: "VEHICLE",
-    vehicleType: v.vehicleType,
-    name: v.driverName ?? "Driver",
-    phone: v.driverPhone ?? null,
-    companyName: v.vendor.shopName,
-    licensePlate: v.licensePlate ?? null,
-    capacity: v.capacity ?? null,
-    rating: null,
-    totalRatings: null,
-    lastSeen: v.lastSeen?.toISOString() ?? null,
-    latitude: v.latitude ?? null,
-    longitude: v.longitude ?? null,
-    isVerified: false,
-  }));
-
-  const all: DeliveryUnit[] = [...riders, ...vendorUnits].sort(
+  const all = riders.sort(
     (a, b) =>
       statusOrder(a.lastSeen ? new Date(a.lastSeen) : null) -
       statusOrder(b.lastSeen ? new Date(b.lastSeen) : null)

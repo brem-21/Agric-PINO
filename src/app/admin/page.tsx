@@ -8,14 +8,16 @@ import {
   AlertTriangle,
   ShoppingBag,
   ClipboardList,
+  Warehouse,
   ArrowRight,
   Loader2,
 } from "lucide-react";
 
 interface Stats {
   totalUsers: number;
-  usersByRole: { FARMER: number; BUYER: number; LOGISTICS: number; VENDOR: number };
+  usersByRole: { FARMER: number; BUYER: number; LOGISTICS: number; STORAGE_FACILITY: number };
   pendingListings: number;
+  pendingFacilities: number;
   openComplaints: number;
   totalListings: number;
   totalOrders: number;
@@ -25,7 +27,7 @@ const ROLE_PILLS = [
   { key: "FARMER", label: "Farmers", color: "bg-[#eeeee9] text-[#1c3a13]" },
   { key: "BUYER", label: "Buyers", color: "bg-[#eeeee9] text-[#1c3a13]" },
   { key: "LOGISTICS", label: "Riders", color: "bg-[#eeeee9] text-[#1c3a13]" },
-  { key: "VENDOR", label: "Vendors", color: "bg-[#eeeee9] text-[#1c3a13]" },
+  { key: "STORAGE_FACILITY", label: "Storage Facilities", color: "bg-[#eeeee9] text-[#1c3a13]" },
 ];
 
 export default function AdminDashboard() {
@@ -94,6 +96,24 @@ export default function AdminDashboard() {
             </div>
             <p className="text-xs text-[#1c3a13]/40 flex items-center gap-1">
               Review listings <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+            </p>
+          </div>
+        </Link>
+
+        {/* Pending Facilities */}
+        <Link href="/admin/storage-facilities" className="block group">
+          <div className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] p-5 transition-colors hover:bg-[#eeeee9]">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-xs font-medium text-[#1c3a13]/50 uppercase tracking-wide">Pending Facilities</p>
+                <p className="text-3xl font-bold mt-1 text-[#1c3a13]">{stats?.pendingFacilities ?? 0}</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eeeee9]">
+                <Warehouse className="h-5 w-5 text-[#1c3a13]" />
+              </div>
+            </div>
+            <p className="text-xs text-[#1c3a13]/40 flex items-center gap-1">
+              Review storage facilities <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
             </p>
           </div>
         </Link>

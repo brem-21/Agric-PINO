@@ -2,8 +2,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { Package, ShoppingCart, CheckCircle, DollarSign, PlusCircle, ExternalLink, Navigation } from "lucide-react";
+import { formatCurrency, formatDate, formatPercent } from "@/lib/utils";
+import { Package, ShoppingCart, CheckCircle, DollarSign, TrendingDown, PlusCircle, ExternalLink, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WeatherWidget } from "@/components/shared/weather-widget";
@@ -48,6 +48,7 @@ export default async function FarmerDashboardPage() {
     paidOrdersAgg,
     recentOrders,
     recentListings,
+    lossListings,
     user,
     latestVerificationRequest,
   ] = await Promise.all([
@@ -56,7 +57,7 @@ export default async function FarmerDashboardPage() {
     prisma.order.count({ where: { farmerId, status: "DELIVERED" } }),
     prisma.order.aggregate({
       where: { farmerId, paymentStatus: "PAID" },
-      _sum: { totalAmount: true },
+      _sum: { totalAmount: true, facilityCommissionAmount: true },
     }),
     prisma.order.findMany({
       where: { farmerId },
@@ -72,6 +73,15 @@ export default async function FarmerDashboardPage() {
       orderBy: { createdAt: "desc" },
       take: 3,
     }),
+    prisma.produceListing.findMany({
+      where: { farmerId },
+      select: {
+        quantity: true,
+        pricePerUnit: true,
+        expiryDate: true,
+        orders: { select: { quantity: true } },
+      },
+    }),
     prisma.user.findUnique({ where: { id: farmerId }, select: { isVerified: true, verifiedAt: true } }),
     prisma.verificationRequest.findFirst({
       where: { userId: farmerId },
@@ -80,13 +90,53 @@ export default async function FarmerDashboardPage() {
     }),
   ]);
 
-  const totalEarnings = paidOrdersAgg._sum.totalAmount ?? 0;
+  // Net of any storage-facility commission — gross sale amount isn't all the
+  // farmer's when a sale was routed through a facility (see Order.facilityCommissionAmount).
+  const totalEarnings =
+    (paidOrdersAgg._sum.totalAmount ?? 0) - (paidOrdersAgg._sum.facilityCommissionAmount ?? 0);
+
+  // Post-harvest loss %, by value rather than raw quantity (crops are listed in
+  // different units — kg, bags, crates — so summing quantity directly across
+  // listings isn't meaningful, but GHS value is). ProduceListing.quantity is a
+  // live "remaining stock" counter (decremented per order), not the amount
+  // originally listed, so the original amount is reconstructed as remaining +
+  // sum of every order ever placed against that listing. A listing counts as
+  // "lost" once its expiry date has passed with stock still unsold — nothing
+  // in this codebase auto-flips a listing to EXPIRED, so this is computed
+  // directly from expiryDate rather than relying on listing.status.
+  const now = new Date();
+  let harvestedValue = 0;
+  let lostValue = 0;
+  for (const listing of lossListings) {
+    const soldQuantity = listing.orders.reduce((sum, o) => sum + o.quantity, 0);
+    const originalQuantity = listing.quantity + soldQuantity;
+    harvestedValue += originalQuantity * listing.pricePerUnit;
+    if (listing.expiryDate && listing.expiryDate < now) {
+      lostValue += listing.quantity * listing.pricePerUnit;
+    }
+  }
+  const lossPercentage = harvestedValue > 0 ? (lostValue / harvestedValue) * 100 : null;
+  const lossColor =
+    lossPercentage === null
+      ? "bg-[#eeeee9] text-[#1c3a13]"
+      : lossPercentage < 10
+      ? "bg-[#d3fa99] text-[#1c3a13]"
+      : lossPercentage < 25
+      ? "bg-amber-100 text-amber-700"
+      : "bg-red-100 text-red-700";
 
   const stats = [
     { label: "Active Listings", value: activeListings, icon: Package, color: "bg-[#eeeee9] text-[#1c3a13]" },
     { label: "Pending Orders", value: pendingOrders, icon: ShoppingCart, color: "bg-[#eeeee9] text-[#1c3a13]" },
     { label: "Completed Orders", value: completedOrders, icon: CheckCircle, color: "bg-[#eeeee9] text-[#1c3a13]" },
     { label: "Total Earnings", value: formatCurrency(totalEarnings), icon: DollarSign, color: "bg-[#d3fa99] text-[#1c3a13]" },
+    {
+      label: "Post-Harvest Loss",
+      caption: "Share of harvest value lost to unsold, expired produce",
+      value: lossPercentage === null ? "—" : formatPercent(lossPercentage),
+      icon: TrendingDown,
+      color: lossColor,
+    },
   ];
 
   return (
@@ -116,7 +166,7 @@ export default async function FarmerDashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(({ label, value, icon: Icon, color }) => (
+        {stats.map(({ label, caption, value, icon: Icon, color }) => (
           <div key={label} className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] p-6">
             <div className="flex items-start justify-between">
               <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}`}>
@@ -126,6 +176,7 @@ export default async function FarmerDashboardPage() {
             <div className="mt-4">
               <p className="text-2xl font-bold text-[#1c3a13]">{value}</p>
               <p className="text-sm text-[#1c3a13]/50 mt-0.5">{label}</p>
+              {caption && <p className="text-xs text-[#1c3a13]/40 mt-1">{caption}</p>}
             </div>
           </div>
         ))}

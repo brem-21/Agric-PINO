@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
   const farmerId = searchParams.get("farmerId");
+  const sortBy = searchParams.get("sortBy"); // "urgency" surfaces produce at the highest risk of spoiling unsold
   const page = parseInt(searchParams.get("page") ?? "1");
   const limit = parseInt(searchParams.get("limit") ?? "12");
 
@@ -62,8 +63,17 @@ export async function GET(req: NextRequest) {
             },
           },
         },
+        storageFacility: {
+          select: { id: true, name: true, location: true, storageTypes: true },
+        },
       },
-      orderBy: { sequence: "desc" },
+      // "urgency" ranks listings closest to their expiry date first (nulls —
+      // produce with no stated expiry — sort last) so buyers see at-risk
+      // stock before it goes to waste; default stays newest-first.
+      orderBy:
+        sortBy === "urgency"
+          ? [{ expiryDate: { sort: "asc", nulls: "last" } }, { sequence: "desc" as const }]
+          : { sequence: "desc" as const },
       skip: (page - 1) * limit,
       take: limit,
     }),

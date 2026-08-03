@@ -18,7 +18,6 @@ export const authConfig: NextAuthConfig = {
     async session({ session, token }) {
       if (token) {
         (session.user as unknown as Record<string, unknown>).role = token.role;
-        (session.user as unknown as Record<string, unknown>).isVendor = token.isVendor ?? false;
       }
       return session;
     },
@@ -26,7 +25,7 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!auth?.user;
       const { pathname } = nextUrl;
 
-      const publicRoutes = ["/", "/auth/login", "/auth/register", "/login", "/register", "/marketplace", "/tracking", "/review", "/unauthorized", "/equipment"];
+      const publicRoutes = ["/", "/auth/login", "/auth/register", "/login", "/register", "/marketplace", "/tracking", "/review", "/unauthorized"];
       const isPublic = publicRoutes.some(
         (r) => pathname === r || pathname.startsWith(`${r}/`)
       );
@@ -40,10 +39,7 @@ export const authConfig: NextAuthConfig = {
       if (pathname.startsWith("/buyer") && role !== "BUYER" && role !== "ADMIN") return false;
       if (pathname.startsWith("/logistics") && role !== "LOGISTICS" && role !== "ADMIN") return false;
       if (pathname.startsWith("/admin") && role !== "ADMIN") return false;
-      if (pathname.startsWith("/vendor")) {
-        const isVendor = (auth?.user as { isVendor?: boolean })?.isVendor;
-        if (role !== "VENDOR" && role !== "ADMIN" && !isVendor) return false;
-      }
+      if (pathname.startsWith("/storage") && role !== "STORAGE_FACILITY" && role !== "ADMIN") return false;
 
       return true;
     },

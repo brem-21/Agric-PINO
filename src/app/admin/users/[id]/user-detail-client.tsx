@@ -47,7 +47,7 @@ interface UserDetail {
   farmerProfile: { farmName: string; location: string; farmSize: number | null; description: string | null; rating: number; totalRatings: number } | null;
   buyerProfile: { businessName: string | null; businessType: string; rating: number; totalRatings: number } | null;
   logisticsProfile: { companyName: string | null; vehicleType: string; licensePlate: string | null; isAvailable: boolean; rating: number; totalRatings: number } | null;
-  vendorProfile: { shopName: string; location: string; rating: number; totalRatings: number } | null;
+  storageFacilityProfile: { name: string; location: string; rating: number; totalRatings: number } | null;
   _count: { listings: number; buyerOrders: number; farmerOrders: number; complaints: number };
 }
 
@@ -55,7 +55,7 @@ const ROLE_BADGE: Record<string, string> = {
   FARMER: "bg-[#eeeee9] text-[#1c3a13]",
   BUYER: "bg-[#eeeee9] text-[#1c3a13]",
   LOGISTICS: "bg-[#eeeee9] text-[#1c3a13]",
-  VENDOR: "bg-[#eeeee9] text-[#1c3a13]",
+  STORAGE_FACILITY: "bg-[#eeeee9] text-[#1c3a13]",
   ADMIN: "bg-[#eeeee9] text-[#1c3a13]",
 };
 
@@ -237,7 +237,7 @@ export function UserDetailClient({ id }: { id: string }) {
       </div>
 
       {/* Profile details */}
-      {(user.farmerProfile || user.buyerProfile || user.logisticsProfile || user.vendorProfile) && (
+      {(user.farmerProfile || user.buyerProfile || user.logisticsProfile || user.storageFacilityProfile) && (
         <div className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] p-5">
           <h2 className="font-medium text-[#1c3a13] mb-4">Profile Details</h2>
           {user.farmerProfile && (
@@ -249,11 +249,11 @@ export function UserDetailClient({ id }: { id: string }) {
               {user.farmerProfile.description && <p className="text-[#1c3a13]/70 mt-2">{user.farmerProfile.description}</p>}
             </dl>
           )}
-          {user.vendorProfile && (
+          {user.storageFacilityProfile && (
             <dl className="space-y-1.5 text-sm">
-              <div><span className="text-[#1c3a13]/50">Shop:</span> <span className="text-[#1c3a13]">{user.vendorProfile.shopName}</span></div>
-              <div><span className="text-[#1c3a13]/50">Location:</span> <span className="text-[#1c3a13]">{user.vendorProfile.location}</span></div>
-              <div><span className="text-[#1c3a13]/50">Rating:</span> <span className="text-[#1c3a13]">{user.vendorProfile.rating.toFixed(1)} ({user.vendorProfile.totalRatings} reviews)</span></div>
+              <div><span className="text-[#1c3a13]/50">Facility:</span> <span className="text-[#1c3a13]">{user.storageFacilityProfile.name}</span></div>
+              <div><span className="text-[#1c3a13]/50">Location:</span> <span className="text-[#1c3a13]">{user.storageFacilityProfile.location}</span></div>
+              <div><span className="text-[#1c3a13]/50">Rating:</span> <span className="text-[#1c3a13]">{user.storageFacilityProfile.rating.toFixed(1)} ({user.storageFacilityProfile.totalRatings} reviews)</span></div>
             </dl>
           )}
           {user.logisticsProfile && (

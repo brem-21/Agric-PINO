@@ -101,7 +101,9 @@ export async function POST(req: NextRequest) {
       FARMER: "/farmer/messages",
       BUYER: "/buyer/messages",
       LOGISTICS: "/logistics/messages",
-      VENDOR: "/vendor/messages",
+      // No dedicated messages inbox for storage facility operators yet — send
+      // them to their dashboard rather than a route that doesn't exist.
+      STORAGE_FACILITY: "/storage/dashboard",
       ADMIN: "/admin/messages",
     };
     const messagesLink = receiver ? (roleLinks[receiver.role] ?? "/farmer/messages") : "/farmer/messages";
