@@ -19,7 +19,7 @@ export default async function LogisticsLayout({ children }: { children: React.Re
       <SessionGuard expectedRoles={["LOGISTICS"]} />
       <PresenceTracker isRider={true} />
       <SidebarCollapseProvider>
-        <LogisticsSidebar user={{ name: session.user.name ?? "Rider", phone: session.user.phone ?? "", image: session.user.image }} />
+        <LogisticsSidebar user={{ name: session.user.name ?? "Rider", phone: session.user.phone ?? "", image: session.user.image }} isIncidentTeam={session.user.isIncidentTeam} />
         <div className="fixed top-4 right-4 z-50">
           <NotificationBell colorClass="text-[#1c3a13]" buttonClassName="bg-[#fcfcf7] shadow-md border border-[#eeeee9] hover:bg-[#eeeee9]" />
         </div>

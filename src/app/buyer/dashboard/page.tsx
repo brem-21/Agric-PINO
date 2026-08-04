@@ -60,7 +60,7 @@ export default async function BuyerDashboardPage() {
     prisma.verificationRequest.findFirst({
       where: { userId: buyerId },
       orderBy: { createdAt: "desc" },
-      select: { status: true, paymentStatus: true },
+      select: { status: true },
     }),
   ]);
 
@@ -80,7 +80,6 @@ export default async function BuyerDashboardPage() {
         isVerified={!!user?.isVerified}
         verifiedAt={user?.verifiedAt ?? null}
         latestRequestStatus={latestVerificationRequest?.status ?? null}
-        latestRequestPaymentStatus={latestVerificationRequest?.paymentStatus ?? null}
       />
       {adminRequest && adminRequest.status !== "APPROVED" && (
         <Link

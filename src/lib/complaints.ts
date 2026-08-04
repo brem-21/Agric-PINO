@@ -1,0 +1,1 @@
+export const REPEAT_OFFENDER_THRESHOLD = 5;

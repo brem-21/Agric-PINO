@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Check, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Check, X, ChevronLeft, ChevronRight, Loader2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 
 interface VerificationRow {
   id: string;
@@ -13,7 +13,6 @@ interface VerificationRow {
   residenceLocation: string;
   idPhotoFront: string;
   idPhotoBack: string | null;
-  fee: number;
   status: "PENDING" | "APPROVED" | "REJECTED";
   reviewNotes: string | null;
   reviewedAt: string | null;
@@ -22,15 +21,26 @@ interface VerificationRow {
   reviewedBy: { name: string } | null;
 }
 
+interface EligibleRow {
+  id: string;
+  name: string;
+  phone: string;
+  role: string;
+  completedCount: number;
+}
+
 interface Pagination { page: number; total: number; pages: number }
 
 const TABS = [
   { value: "PENDING", label: "Pending Review" },
   { value: "", label: "All" },
+  { value: "ELIGIBLE", label: "Eligible, Not Applied" },
 ];
 
 export default function AdminVerificationsPage() {
   const [rows, setRows] = useState<VerificationRow[]>([]);
+  const [eligibleRows, setEligibleRows] = useState<EligibleRow[]>([]);
+  const [threshold, setThreshold] = useState(10);
   const [pagination, setPagination] = useState<Pagination>({ page: 1, total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("PENDING");
@@ -42,6 +52,14 @@ export default function AdminVerificationsPage() {
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
+    if (tab === "ELIGIBLE") {
+      const res = await fetch("/api/admin/verifications?view=eligible");
+      const data = await res.json();
+      setEligibleRows(data.data ?? []);
+      setThreshold(data.threshold ?? 10);
+      setLoading(false);
+      return;
+    }
     const params = new URLSearchParams({ page: String(page), limit: "12" });
     if (tab) params.set("status", tab);
     const res = await fetch(`/api/admin/verifications?${params}`);
@@ -77,7 +95,9 @@ export default function AdminVerificationsPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-light tracking-tight text-[#1c3a13]">Verification Requests</h1>
-        <p className="text-sm text-[#1c3a13]/50 mt-1">{pagination.total} requests</p>
+        <p className="text-sm text-[#1c3a13]/50 mt-1">
+          Free — activity-gated, no fee involved. {tab === "ELIGIBLE" ? `${eligibleRows.length} eligible` : `${pagination.total} requests`}
+        </p>
       </div>
 
       <div className="flex gap-1 bg-[#fcfcf7] border border-[#eeeee9] rounded-xl p-1 w-fit">
@@ -93,6 +113,34 @@ export default function AdminVerificationsPage() {
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-7 w-7 animate-spin text-[#1c3a13]/40" /></div>
+      ) : tab === "ELIGIBLE" ? (
+        eligibleRows.length === 0 ? (
+          <div className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] py-20 text-center">
+            <div className="text-5xl mb-3">🔔</div>
+            <p className="text-[#1c3a13]/50">No one has crossed the {threshold}-transaction threshold without already applying.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-[#1c3a13]/50">
+              These users are eligible to apply for verification but haven&apos;t yet — worth a proactive nudge.
+            </p>
+            {eligibleRows.map((u) => (
+              <div key={u.id} className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] p-4 flex items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-[#1c3a13]">{u.name}</p>
+                    <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-[#eeeee9] text-[#1c3a13]">{u.role}</span>
+                  </div>
+                  <p className="text-sm text-[#1c3a13]/50">{u.phone}</p>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm font-medium text-[#1c3a13]">
+                  <TrendingUp className="h-4 w-4" />
+                  {u.completedCount} completed
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : rows.length === 0 ? (
         <div className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] py-20 text-center">
           <div className="text-5xl mb-3">🪪</div>
@@ -130,7 +178,7 @@ export default function AdminVerificationsPage() {
                     <div className="text-xs text-[#1c3a13]/50 mt-1.5 space-y-0.5">
                       <p>Ghana Card: <span className="font-mono text-[#1c3a13]">{r.ghanaCardNumber}</span> · {r.ghanaCardName}</p>
                       <p>Residence: {r.residenceLocation}</p>
-                      <p>Fee paid: {formatCurrency(r.fee)} · Submitted {formatDate(r.createdAt)}</p>
+                      <p>Submitted {formatDate(r.createdAt)}</p>
                       {r.reviewedBy && r.reviewedAt && <p>Reviewed by {r.reviewedBy.name} on {formatDate(r.reviewedAt)}</p>}
                     </div>
                     {r.reviewNotes && <p className="text-xs text-[#1c3a13]/50 mt-1.5 italic">Notes: {r.reviewNotes}</p>}
@@ -179,7 +227,7 @@ export default function AdminVerificationsPage() {
         </div>
       )}
 
-      {pagination.pages > 1 && (
+      {tab !== "ELIGIBLE" && pagination.pages > 1 && (
         <div className="flex justify-center items-center gap-2">
           <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-[#eeeee9] text-[#1c3a13]/70 hover:bg-[#eeeee9] disabled:opacity-40">

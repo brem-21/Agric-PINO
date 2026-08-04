@@ -203,7 +203,7 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
+  const logistics2 = await prisma.user.upsert({
     where: { phone: "0244000021" },
     update: { lastSeen: away, latitude: 9.4120, longitude: -0.8215 },
     create: {
@@ -291,6 +291,39 @@ async function main() {
           isAvailable: true,
           rating: 4.6,
           totalRatings: 29,
+        },
+      },
+    },
+  });
+
+  // 5th rider — registered with a truck, for hauling larger consignments
+  // (grain, yams) that a motorbike can't carry.
+  await prisma.user.upsert({
+    where: { phone: "0244000024" },
+    update: { lastSeen: online, latitude: 9.4200, longitude: -0.8300 },
+    create: {
+      name: "Iddrisu Baba",
+      phone: "0244000024",
+      password: hashedPassword,
+      role: "LOGISTICS",
+      region: "Northern Region",
+      ghanaCardNumber: "GHA-912345678-9",
+      ghanaCardName: "Iddrisu Baba Yakubu",
+      residenceLocation: "Tamale, Northern Region",
+      isVerified: true,
+      verifiedAt,
+      lastSeen: online,
+      latitude: 9.4200,
+      longitude: -0.8300,
+      logisticsProfile: {
+        create: {
+          companyName: "Baba Haulage",
+          vehicleType: "TRUCK",
+          licensePlate: "NR-7734-24",
+          coverageAreas: ["Northern Region", "Upper East Region", "Upper West Region"],
+          isAvailable: true,
+          rating: 4.5,
+          totalRatings: 9,
         },
       },
     },
@@ -613,6 +646,84 @@ async function main() {
     });
   }
 
+  // ── Storage Facility 3: Wa Community Store (unverified) ──────────────────
+  // Deliberately unverified with 10 DROPPED_OFF bookings, so it shows up in
+  // the admin "Eligible, not yet applied" verification queue.
+  const facility3 = await prisma.user.upsert({
+    where: { phone: "0244000032" },
+    update: {},
+    create: {
+      name: "Salifu Baako",
+      phone: "0244000032",
+      password: hashedPassword,
+      role: "STORAGE_FACILITY",
+      region: "Upper West Region",
+      district: "Wa Municipal",
+      ghanaCardNumber: "GHA-900000032-2",
+      ghanaCardName: "Salifu Baako",
+      residenceLocation: "Wa, Upper West Region",
+      isVerified: false,
+      latitude: 10.0580,
+      longitude: -2.5040,
+      storageFacilityProfile: {
+        create: {
+          name: "Wa Community Store",
+          description: "Community-run dry storage for tubers and grains in Wa.",
+          location: "Wa, Upper West Region",
+          latitude: 10.0580,
+          longitude: -2.5040,
+          storageTypes: ["HERMETIC_DRY"],
+          capacityTonnes: 25,
+          acceptedCategories: ["TUBERS", "GRAINS"],
+          operatingHours: "Mon–Sat 8am–5pm",
+          approvalStatus: "APPROVED",
+          rating: 0,
+          totalRatings: 0,
+        },
+      },
+    },
+  });
+  const waFacility = await prisma.storageFacilityProfile.findUniqueOrThrow({ where: { userId: facility3.id } });
+
+  const waBookingCount = await prisma.storageBooking.count({
+    where: { facilityId: waFacility.id, farmerId: farmer3.id, status: "DROPPED_OFF" },
+  });
+  for (let i = waBookingCount; i < 10; i++) {
+    await prisma.storageBooking.create({
+      data: {
+        facilityId: waFacility.id,
+        farmerId: farmer3.id,
+        cropType: "Yams",
+        category: "TUBERS",
+        quantity: 50,
+        unit: "kg",
+        pricePerUnit: 8,
+        scheduledDropoff: daysAgo(30 - i),
+        status: "DROPPED_OFF",
+        confirmedAt: daysAgo(31 - i),
+        droppedOffAt: daysAgo(30 - i),
+      },
+    });
+  }
+
+  // Equipment — set via a direct update rather than the upsert's nested
+  // `create` above, since `update: {}` on the outer user upsert means an
+  // already-existing facility profile is otherwise never touched on reseed.
+  await Promise.all([
+    prisma.storageFacilityProfile.update({
+      where: { id: bolgatangaFacility.id },
+      data: { equipment: ["REFRIGERATORS", "BACKUP_GENERATOR"] },
+    }),
+    prisma.storageFacilityProfile.update({
+      where: { id: tamaleFacility.id },
+      data: { equipment: ["DRYERS", "DRYING_PANS", "WEIGHING_SCALES"] },
+    }),
+    prisma.storageFacilityProfile.update({
+      where: { id: waFacility.id },
+      data: { equipment: ["DRYING_PANS", "VENTILATION_FANS"] },
+    }),
+  ]);
+
   void facility1;
   void facility2;
 
@@ -640,23 +751,188 @@ async function main() {
     data: { approvalStatus: "APPROVED" },
   });
 
+  // ── Incident Team (Macho Men Association) ─────────────────────────────────
+  // Kofi keeps his FARMER role — isIncidentTeam is an add-on capability, not
+  // a role swap.
+  await prisma.user.update({ where: { id: farmer1.id }, data: { isIncidentTeam: true } });
+
+  // ── Verification-threshold demo data ──────────────────────────────────────
+  // Yakubu (farmer3) and Ibrahim (buyer2) are both seeded unverified above —
+  // give each of them 10 DELIVERED orders so they cross the threshold and
+  // surface in admin's "Eligible, not yet applied" verification queue.
+  console.log("Seeding verification-threshold activity...");
+
+  const buyer2 = await prisma.user.findUniqueOrThrow({ where: { phone: "0244000011" } });
+  const yamsListing = await prisma.produceListing.findFirstOrThrow({ where: { farmerId: farmer3.id, cropType: "Yams" } });
+  const tomatoesListing = await prisma.produceListing.findFirstOrThrow({ where: { farmerId: farmer1.id, cropType: "Tomatoes" } });
+
+  const farmer3DeliveredCount = await prisma.order.count({ where: { farmerId: farmer3.id, status: "DELIVERED" } });
+  for (let i = farmer3DeliveredCount; i < 10; i++) {
+    await prisma.order.create({
+      data: {
+        buyerId: buyer1.id,
+        farmerId: farmer3.id,
+        listingId: yamsListing.id,
+        quantity: 20,
+        totalAmount: 20 * yamsListing.pricePerUnit,
+        status: "DELIVERED",
+        paymentStatus: "PAID",
+        createdAt: daysAgo(30 - i),
+      },
+    });
+  }
+
+  const buyer2DeliveredCount = await prisma.order.count({ where: { buyerId: buyer2.id, status: "DELIVERED" } });
+  for (let i = buyer2DeliveredCount; i < 10; i++) {
+    await prisma.order.create({
+      data: {
+        buyerId: buyer2.id,
+        farmerId: farmer1.id,
+        listingId: tomatoesListing.id,
+        quantity: 10,
+        totalAmount: 10 * tomatoesListing.pricePerUnit,
+        status: "DELIVERED",
+        paymentStatus: "PAID",
+        createdAt: daysAgo(25 - i),
+      },
+    });
+  }
+
+  // Fuseini (logistics2) is seeded unverified above — give his profile 10
+  // DELIVERED transport requests to cross the same threshold.
+  const fuseiniProfile = await prisma.logisticsProfile.findUniqueOrThrow({ where: { userId: logistics2.id } });
+  const fuseiniDeliveredCount = await prisma.transportRequest.count({ where: { providerId: fuseiniProfile.id, status: "DELIVERED" } });
+  for (let i = fuseiniDeliveredCount; i < 10; i++) {
+    await prisma.transportRequest.create({
+      data: {
+        requesterId: farmer1.id,
+        providerId: fuseiniProfile.id,
+        pickupLocation: "Tamale, Northern Region",
+        pickupLat: 9.4008,
+        pickupLong: -0.8393,
+        deliveryLocation: "Tamale Central Market",
+        deliveryLat: 9.4075,
+        deliveryLong: -0.8533,
+        scheduledDate: daysAgo(20 - i),
+        estimatedCost: 30,
+        actualCost: 30,
+        status: "DELIVERED",
+      },
+    });
+  }
+
+  // ── Repeat-offender demo data ──────────────────────────────────────────────
+  // Ibrahim (buyer2) is the target of 5 complaints from 5 different
+  // reporters — enough to surface in the repeat-offenders table (threshold 5).
+  console.log("Seeding repeat-offender complaint data...");
+
+  const complaintReporters = [farmer1.id, farmer2.id, farmer3.id, buyer1.id, logistics1.id];
+  const existingComplaintsAgainstBuyer2 = await prisma.complaint.count({ where: { targetUserId: buyer2.id } });
+  for (let i = existingComplaintsAgainstBuyer2; i < complaintReporters.length; i++) {
+    await prisma.complaint.create({
+      data: {
+        reporterId: complaintReporters[i],
+        targetUserId: buyer2.id,
+        subject: "Late payment for delivered produce",
+        category: "PAYMENT_DISPUTE",
+        description: "This buyer has repeatedly delayed payment after produce was delivered, well past the agreed timeline.",
+        status: "OPEN",
+        createdAt: daysAgo(15 - i),
+      },
+    });
+  }
+
+  // One complaint against Ibrahim gets assigned to Kofi (the seeded Macho), so
+  // the "Assigned to Me" queue in the Incident Team portal isn't empty.
+  const firstComplaintAgainstBuyer2 = await prisma.complaint.findFirst({
+    where: { targetUserId: buyer2.id, assignedToId: null },
+    orderBy: { createdAt: "asc" },
+  });
+  if (firstComplaintAgainstBuyer2) {
+    await prisma.complaint.update({
+      where: { id: firstComplaintAgainstBuyer2.id },
+      data: { assignedToId: farmer1.id, status: "UNDER_REVIEW" },
+    });
+  }
+
+  // ── A second Incident Team applicant (still PENDING) ──────────────────────
+  // So admin's "Macho Applications" queue has something to review, distinct
+  // from Kofi who's already approved.
+  console.log("Seeding a pending Incident Team application...");
+
+  const applicant = await prisma.user.upsert({
+    where: { phone: "0244000040" },
+    update: {},
+    create: {
+      name: "Salamatu Yahaya",
+      phone: "0244000040",
+      password: hashedPassword,
+      role: "BUYER",
+      region: "Northern Region",
+      district: "Tamale Metro",
+      ghanaCardNumber: "GHA-923456789-0",
+      ghanaCardName: "Salamatu Yahaya",
+      residenceLocation: "Tamale, Northern Region",
+      isVerified: false,
+      buyerProfile: {
+        create: {
+          businessName: "Salamatu's Provisions",
+          businessType: "RETAILER",
+          description: "Neighbourhood provisions shop in Tamale.",
+        },
+      },
+    },
+  });
+  await prisma.incidentTeamRequest.upsert({
+    where: { userId: applicant.id },
+    update: {},
+    create: {
+      userId: applicant.id,
+      reason: "I want to help keep the platform fair — I've seen a few disputes in my area that could use a mediator.",
+      status: "PENDING",
+    },
+  });
+
+  // ── A submitted-and-pending verification application ──────────────────────
+  // Yakubu (farmer3) already crossed the 10-order threshold above; here he
+  // actually submits, so admin's "Pending" tab (not just "Eligible") has data.
+  console.log("Seeding a pending verification application...");
+
+  await prisma.verificationRequest.upsert({
+    where: { id: `seed-verification-${farmer3.id}` },
+    update: {},
+    create: {
+      id: `seed-verification-${farmer3.id}`,
+      userId: farmer3.id,
+      role: "FARMER",
+      ghanaCardNumber: "GHA-345678901-2",
+      ghanaCardName: "Yakubu Mohammed Alhassan",
+      residenceLocation: "Wa, Upper West Region",
+      idPhotoFront: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?w=800&q=80",
+      status: "PENDING",
+    },
+  });
+
   console.log(`
 ✅ Seed complete!
 
 Demo accounts (password: password123):
-  Farmer 1:   0244000001  (Kofi Mensah — verified ✓, Tamale)
+  Farmer 1:   0244000001  (Kofi Mensah — verified ✓, Tamale — Incident Team member)
   Farmer 2:   0244000002  (Amina Issahaku — verified ✓, Bolgatanga)
-  Farmer 3:   0244000003  (Yakubu Alhassan, Wa)
+  Farmer 3:   0244000003  (Yakubu Alhassan, Wa — verification eligible + PENDING request)
   Buyer 1:    0244000010  (Grace Agyemang — verified ✓, Wholesaler)
-  Buyer 2:    0244000011  (Ibrahim Kwesi — Restaurant)
+  Buyer 2:    0244000011  (Ibrahim Kwesi — verification eligible, 5x reported/flagged)
   Rider 1:    0244000020  (Abdul Razak — ONLINE, Tamale)
-  Rider 2:    0244000021  (Fuseini Dauda — AWAY, Tamale)
+  Rider 2:    0244000021  (Fuseini Dauda — AWAY, Tamale — verification eligible)
   Rider 3:    0244000022  (Mariama Sumaila — OFFLINE, Tamale)
   Rider 4:    0244000023  (Shaibu Alidu — ONLINE, Bolgatanga)
+  Rider 5:    0244000024  (Iddrisu Baba — ONLINE, Tamale — TRUCK)
   Storage 1:  0244000030  (Kwame Darko — Bolgatanga Cold Storage, Upper East)
                            Amina's tomatoes are already dropped off & listed here
   Storage 2:  0244000031  (Abena Fordjour — Tamale Grain Reserve, Northern)
                            Yakubu's sorghum has a CONFIRMED drop-off booking here
+  Storage 3:  0244000032  (Salifu Baako — Wa Community Store — verification eligible)
+  Buyer 3:    0244000040  (Salamatu Yahaya — PENDING Incident Team application)
   Admin:      0244000099  (Lorgric Admin)
   `);
 }

@@ -8,7 +8,7 @@ const { auth } = NextAuth(authConfig);
 // unmatched paths 404 for anonymous visitors instead of bouncing to login.
 // /delivery has no auth check of its own (it renders PII straight from the
 // order id with no session gate), so it stays behind this list too.
-const PROTECTED_PREFIXES = ["/farmer", "/buyer", "/logistics", "/admin", "/storage", "/delivery"];
+const PROTECTED_PREFIXES = ["/farmer", "/buyer", "/logistics", "/admin", "/storage", "/incident-team", "/delivery"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -21,6 +21,7 @@ export default auth((req) => {
   }
 
   const role = (req.auth?.user as { role?: string } | undefined)?.role;
+  const isIncidentTeam = (req.auth?.user as { isIncidentTeam?: boolean } | undefined)?.isIncidentTeam;
 
   if (role) {
     if (pathname.startsWith("/farmer") && role !== "FARMER" && role !== "ADMIN")
@@ -34,6 +35,10 @@ export default auth((req) => {
     if (pathname.startsWith("/admin") && pathname !== "/admin/pending" && role !== "ADMIN")
       return Response.redirect(new URL("/unauthorized", req.url));
     if (pathname.startsWith("/storage") && role !== "STORAGE_FACILITY" && role !== "ADMIN")
+      return Response.redirect(new URL("/unauthorized", req.url));
+    // /incident-team/apply is reachable by any authenticated role — it's where
+    // an existing Farmer/Buyer/Logistics/Storage Facility user applies to join.
+    if (pathname.startsWith("/incident-team") && pathname !== "/incident-team/apply" && role !== "ADMIN" && !isIncidentTeam)
       return Response.redirect(new URL("/unauthorized", req.url));
   }
 });

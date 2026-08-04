@@ -26,6 +26,7 @@ const registerSchema = z.object({
   // Logistics-specific
   companyName: z.string().optional(),
   licensePlate: z.string().optional(),
+  vehicleType: z.enum(["MOTORBIKE", "TRUCK"]).default("MOTORBIKE"),
   // Storage facility-specific
   facilityName: z.string().optional(),
 });
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
       businessType: formValue(formData, "businessType"),
       companyName: formValue(formData, "companyName"),
       licensePlate: formValue(formData, "licensePlate"),
+      vehicleType: formValue(formData, "vehicleType"),
       facilityName: formValue(formData, "facilityName"),
     });
 
@@ -128,7 +130,7 @@ export async function POST(req: NextRequest) {
           logisticsProfile: {
             create: {
               companyName: data.companyName,
-              vehicleType: "MOTORBIKE",
+              vehicleType: data.vehicleType,
               licensePlate: data.licensePlate,
               coverageAreas: [data.region],
             },

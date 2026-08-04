@@ -1,9 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const location = searchParams.get("location");
+  const category = searchParams.get("category");
+
   const facilities = await prisma.storageFacilityProfile.findMany({
-    where: { approvalStatus: "APPROVED" },
+    where: {
+      approvalStatus: "APPROVED",
+      ...(location && { location: { contains: location, mode: "insensitive" } }),
+      ...(category && { acceptedCategories: { has: category as never } }),
+    },
     select: {
       id: true,
       name: true,
@@ -14,6 +22,7 @@ export async function GET() {
       storageTypes: true,
       capacityTonnes: true,
       acceptedCategories: true,
+      equipment: true,
       operatingHours: true,
       rating: true,
       totalRatings: true,

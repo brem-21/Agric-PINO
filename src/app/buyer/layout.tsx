@@ -19,7 +19,7 @@ export default async function BuyerLayout({ children }: { children: React.ReactN
       <SessionGuard expectedRoles={["BUYER"]} />
       <PresenceTracker isRider={false} />
       <SidebarCollapseProvider>
-        <BuyerSidebar user={{ name: session.user.name ?? "Buyer", phone: session.user.phone ?? "", image: session.user.image }} />
+        <BuyerSidebar user={{ name: session.user.name ?? "Buyer", phone: session.user.phone ?? "", image: session.user.image }} isIncidentTeam={session.user.isIncidentTeam} />
         <div className="fixed top-4 right-4 z-50">
           <NotificationBell colorClass="text-[#1c3a13]" buttonClassName="bg-[#fcfcf7] shadow-md border border-[#eeeee9] hover:bg-[#eeeee9]" />
         </div>

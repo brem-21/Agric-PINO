@@ -7,53 +7,62 @@ datasource db {
 }
 
 model User {
-  id                     String                  @id @default(cuid())
-  name                   String
-  email                  String?                 @unique
-  emailVerified          DateTime?
-  phone                  String                  @unique
-  password               String?
-  image                  String?
-  role                   UserRole                @default(FARMER)
-  region                 String?
-  district               String?
-  isActive               Boolean                 @default(true)
-  ghanaCardNumber        String?                 @unique
-  ghanaCardName          String?
-  residenceLocation      String?
-  isVerified             Boolean                 @default(false)
-  verifiedAt             DateTime?
-  latitude               Float?
-  longitude              Float?
-  lastSeen               DateTime?
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
-  accounts               Account[]
-  buyerProfile           BuyerProfile?
-  complaints             Complaint[]             @relation("UserComplaints")
-  events                 UserEvent[]
-  recommendations        Recommendation[]
-  farmerProfile          FarmerProfile?
-  following              Follow[]                @relation("UserFollowing")
-  followers              Follow[]                @relation("UserFollowers")
-  logisticsProfile       LogisticsProfile?
-  receivedMessages       Message[]               @relation("ReceivedMessages")
-  sentMessages           Message[]               @relation("SentMessages")
-  sentNotifs             Notification[]          @relation("NotificationActor")
-  notifications          Notification[]          @relation("NotificationRecipient")
-  buyerOrders            Order[]                 @relation("BuyerOrders")
-  farmerOrders           Order[]                 @relation("FarmerOrders")
-  listings               ProduceListing[]
-  reviewsGiven           Review[]                @relation("ReviewAuthor")
-  reviewsReceived        Review[]                @relation("ReviewTarget")
-  sessions               Session[]
-  transportRequests      TransportRequest[]
-  storageFacilityProfile StorageFacilityProfile?
-  storageBookings        StorageBooking[]
-  verificationRequests   VerificationRequest[]   @relation("VerificationApplicant")
-  verificationReviews    VerificationRequest[]   @relation("VerificationReviewer")
-  adminRequest           AdminRequest?           @relation("AdminRequestApplicant")
-  adminRequestReviews    AdminRequest[]          @relation("AdminRequestReviewer")
+  id                         String                  @id @default(cuid())
+  name                       String
+  email                      String?                 @unique
+  emailVerified              DateTime?
+  phone                      String                  @unique
+  password                   String?
+  image                      String?
+  role                       UserRole                @default(FARMER)
+  region                     String?
+  district                   String?
+  isActive                   Boolean                 @default(true)
+  ghanaCardNumber            String?                 @unique
+  ghanaCardName              String?
+  residenceLocation          String?
+  isVerified                 Boolean                 @default(false)
+  verifiedAt                 DateTime?
+  // Add-on capability alongside `role` (mirrors isVerified's plumbing) — an
+  // existing Farmer/Buyer/Logistics/Storage Facility user can also join the
+  // Incident Team without losing their primary role/dashboard.
+  isIncidentTeam             Boolean                 @default(false)
+  latitude                   Float?
+  longitude                  Float?
+  lastSeen                   DateTime?
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime                @updatedAt
+  accounts                   Account[]
+  buyerProfile               BuyerProfile?
+  complaints                 Complaint[]             @relation("UserComplaints")
+  events                     UserEvent[]
+  recommendations            Recommendation[]
+  farmerProfile              FarmerProfile?
+  following                  Follow[]                @relation("UserFollowing")
+  followers                  Follow[]                @relation("UserFollowers")
+  logisticsProfile           LogisticsProfile?
+  receivedMessages           Message[]               @relation("ReceivedMessages")
+  sentMessages               Message[]               @relation("SentMessages")
+  sentNotifs                 Notification[]          @relation("NotificationActor")
+  notifications              Notification[]          @relation("NotificationRecipient")
+  buyerOrders                Order[]                 @relation("BuyerOrders")
+  farmerOrders               Order[]                 @relation("FarmerOrders")
+  listings                   ProduceListing[]
+  reviewsGiven               Review[]                @relation("ReviewAuthor")
+  reviewsReceived            Review[]                @relation("ReviewTarget")
+  sessions                   Session[]
+  transportRequests          TransportRequest[]
+  storageFacilityProfile     StorageFacilityProfile?
+  storageBookings            StorageBooking[]
+  verificationRequests       VerificationRequest[]   @relation("VerificationApplicant")
+  verificationReviews        VerificationRequest[]   @relation("VerificationReviewer")
+  adminRequest               AdminRequest?           @relation("AdminRequestApplicant")
+  adminRequestReviews        AdminRequest[]          @relation("AdminRequestReviewer")
+  incidentTeamRequest        IncidentTeamRequest?    @relation("IncidentTeamApplicant")
+  incidentTeamRequestReviews IncidentTeamRequest[]   @relation("IncidentTeamReviewer")
+  assignedComplaints         Complaint[]             @relation("ComplaintAssignee")
+  targetedComplaints         Complaint[]             @relation("ComplaintTarget")
+  resolvedComplaints         Complaint[]             @relation("ComplaintResolver")
 }
 
 model FarmerProfile {
@@ -339,8 +348,8 @@ model LoginAttempt {
 // StorageBooking for the drop-off lifecycle and Order.storageFacilityId for how
 // a sale routed through a facility is recorded.
 model StorageFacilityProfile {
-  id                 String            @id @default(cuid())
-  userId             String            @unique
+  id                 String             @id @default(cuid())
+  userId             String             @unique
   name               String
   description        String?
   location           String
@@ -349,15 +358,18 @@ model StorageFacilityProfile {
   storageTypes       StorageType[]
   capacityTonnes     Float?
   acceptedCategories ProduceCategory[]
+  // Equipment a facility advertises to farmers/buyers — feeds directly into the
+  // AI facility recommendation (see AiInsightSubject.FACILITY_RECOMMENDATION).
+  equipment          StorageEquipment[]
   operatingHours     String?
-  rating             Float             @default(0)
-  totalRatings       Int               @default(0)
+  rating             Float              @default(0)
+  totalRatings       Int                @default(0)
   // Mirrors ProduceListing's admin moderation gate — a facility only appears
   // on the farmer-facing map once approved.
-  approvalStatus     ApprovalStatus    @default(PENDING)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvalStatus     ApprovalStatus     @default(PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookings           StorageBooking[]
   listings           ProduceListing[]
   orders             Order[]
@@ -430,6 +442,26 @@ model Recommendation {
   @@index([sentAt])
 }
 
+// A cached AI-generated tip, one row per subject (upserted, not an append-only
+// log like Recommendation) — regenerated when stale (see src/lib/ai-insights.ts)
+// since nothing in this app caches LLM output today and every existing call
+// path hits OpenRouter fresh on every request.
+model AiInsight {
+  id          String           @id @default(cuid())
+  subjectType AiInsightSubject
+  subjectId   String
+  content     String
+  generatedAt DateTime         @default(now())
+
+  @@unique([subjectType, subjectId])
+}
+
+enum AiInsightSubject {
+  FACILITY_PRACTICES
+  FARMER_LOSS_TIPS
+  FACILITY_RECOMMENDATION
+}
+
 model VerificationRequest {
   id                String         @id @default(cuid())
   userId            String
@@ -439,9 +471,6 @@ model VerificationRequest {
   residenceLocation String
   idPhotoFront      String
   idPhotoBack       String?
-  fee               Float
-  paymentReference  String         @unique
-  paymentStatus     PaymentStatus  @default(UNPAID)
   status            ApprovalStatus @default(PENDING)
   reviewNotes       String?
   reviewedById      String?
@@ -473,6 +502,27 @@ model AdminRequest {
   updatedAt       DateTime       @updatedAt
   user            User           @relation("AdminRequestApplicant", fields: [userId], references: [id], onDelete: Cascade)
   reviewedBy      User?          @relation("AdminRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+// An existing, already-active user applying to join the Incident Team
+// ("Macho Men Association") — unlike AdminRequest this doesn't gate the
+// account itself (the applicant keeps full normal access while pending), and
+// doesn't re-collect Ghana Card info since it's already on User from their
+// original registration. Approval sets User.isIncidentTeam, never role.
+model IncidentTeamRequest {
+  id           String         @id @default(cuid())
+  userId       String         @unique
+  reason       String?
+  status       ApprovalStatus @default(PENDING)
+  reviewNotes  String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  user         User           @relation("IncidentTeamApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy   User?          @relation("IncidentTeamReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@index([status])
 }
@@ -520,9 +570,22 @@ model Complaint {
   adminNotes   String?
   resolvedAt   DateTime?
   resolvedById String?
+  // Optional — who this complaint is about, distinct from who filed it
+  // (reporterId). Used to track repeat offenders; not every complaint has a
+  // specific person in mind (e.g. a technical bug report), so this stays nullable.
+  targetUserId String?
+  // Optional — an Admin or Incident Team ("Macho Men Association") member
+  // this complaint has been assigned to (by an admin) or self-assigned to.
+  assignedToId String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   reporter     User              @relation("UserComplaints", fields: [reporterId], references: [id], onDelete: Cascade)
+  target       User?             @relation("ComplaintTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  assignedTo   User?             @relation("ComplaintAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  resolvedBy   User?             @relation("ComplaintResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([targetUserId])
+  @@index([assignedToId])
 }
 
 enum UserRole {
@@ -541,6 +604,20 @@ enum UserRole {
 enum StorageType {
   COLD_CHAIN
   HERMETIC_DRY
+}
+
+// Physical equipment a facility can advertise, so farmers know what it's
+// actually capable of before booking (e.g. a facility with REFRIGERATORS can
+// hold perishables past what ambient HERMETIC_DRY storage allows).
+enum StorageEquipment {
+  REFRIGERATORS
+  COOLERS
+  DRYERS
+  DRYING_PANS
+  VENTILATION_FANS
+  WEIGHING_SCALES
+  PALLETS_RACKING
+  BACKUP_GENERATOR
 }
 
 enum StorageBookingStatus {
@@ -563,6 +640,7 @@ enum BuyerType {
 
 enum VehicleType {
   MOTORBIKE
+  TRUCK
 }
 
 enum ProduceCategory {

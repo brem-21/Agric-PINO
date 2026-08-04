@@ -56,6 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           role: user.role,
           image: user.image,
           isVerified: user.isVerified,
+          isIncidentTeam: user.isIncidentTeam,
           verifiedAt: user.verifiedAt?.toISOString() ?? null,
         };
       },
@@ -69,6 +70,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           phone?: string;
           image?: string | null;
           isVerified?: boolean;
+          isIncidentTeam?: boolean;
           verifiedAt?: string | null;
         };
         token.role = u.role;
@@ -76,6 +78,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.phone = u.phone;
         token.image = u.image ?? null;
         token.isVerified = u.isVerified ?? false;
+        token.isIncidentTeam = u.isIncidentTeam ?? false;
         token.verifiedAt = u.verifiedAt ?? null;
       } else if (token.id) {
         // Re-check on every request (not just at sign-in) so admin actions —
@@ -83,11 +86,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // instead of requiring the user to log out and back in.
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, isVerified: true, verifiedAt: true },
+          select: { role: true, isVerified: true, isIncidentTeam: true, verifiedAt: true },
         });
         if (dbUser) {
           token.role = dbUser.role;
           token.isVerified = dbUser.isVerified;
+          token.isIncidentTeam = dbUser.isIncidentTeam;
           token.verifiedAt = dbUser.verifiedAt?.toISOString() ?? null;
         }
       }
@@ -104,6 +108,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.phone = token.phone as string | undefined;
         session.user.image = (token.image as string | null) ?? null;
         session.user.isVerified = token.isVerified as boolean;
+        session.user.isIncidentTeam = token.isIncidentTeam as boolean;
         session.user.verifiedAt = token.verifiedAt as string | null;
       }
       return session;
@@ -120,6 +125,7 @@ declare module "next-auth" {
       role: UserRole;
       phone?: string;
       isVerified: boolean;
+      isIncidentTeam: boolean;
       verifiedAt: string | null;
     };
   }

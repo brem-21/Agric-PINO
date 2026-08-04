@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, CheckCircle, AlertCircle, Flag } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Flag, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getInitials } from "@/lib/utils";
 
 interface ComplaintFormProps {
   onSuccess?: () => void;
@@ -45,6 +46,21 @@ interface Complaint {
   updatedAt: string;
 }
 
+interface SearchUser {
+  id: string;
+  name: string;
+  image: string | null;
+  role: string;
+}
+
+function RoleBadge({ role }: { role: string }) {
+  return (
+    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-[#eeeee9] text-[#1c3a13]">
+      {role.charAt(0) + role.slice(1).toLowerCase()}
+    </span>
+  );
+}
+
 export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("");
@@ -54,6 +70,10 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
   const [error, setError] = useState("");
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [targetUser, setTargetUser] = useState<SearchUser | null>(null);
+  const [targetQuery, setTargetQuery] = useState("");
+  const [targetResults, setTargetResults] = useState<SearchUser[]>([]);
+  const [targetSearching, setTargetSearching] = useState(false);
 
   useEffect(() => {
     fetch("/api/complaints")
@@ -62,6 +82,19 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
       .catch(() => {})
       .finally(() => setLoadingHistory(false));
   }, [submitted]);
+
+  useEffect(() => {
+    if (targetQuery.length < 1) { setTargetResults([]); return; }
+    const timer = setTimeout(() => {
+      setTargetSearching(true);
+      fetch(`/api/users/search?q=${encodeURIComponent(targetQuery)}`)
+        .then((r) => r.json())
+        .then((d) => setTargetResults(d.users ?? []))
+        .catch(() => {})
+        .finally(() => setTargetSearching(false));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [targetQuery]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,7 +112,12 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
       const res = await fetch("/api/complaints", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject: subject.trim(), category, description: description.trim() }),
+        body: JSON.stringify({
+          subject: subject.trim(),
+          category,
+          description: description.trim(),
+          targetUserId: targetUser?.id,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -90,6 +128,8 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
       setSubject("");
       setCategory("");
       setDescription("");
+      setTargetUser(null);
+      setTargetQuery("");
       onSuccess?.();
     } catch {
       setError("Network error. Please try again.");
@@ -144,6 +184,69 @@ export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
                 required
                 className="w-full rounded-lg border border-[#eeeee9] bg-[#fcfcf7] px-4 py-2.5 text-sm text-[#1c3a13] placeholder-[#1c3a13]/40 focus:border-[#1c3a13] focus:bg-[#fcfcf7] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/20 transition-colors"
               />
+            </div>
+
+            {/* Target user (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-[#1c3a13] mb-1.5">
+                Who is this about? <span className="text-[#1c3a13]/40 font-normal">(optional)</span>
+              </label>
+              {targetUser ? (
+                <div className="flex items-center gap-2.5 rounded-lg border border-[#eeeee9] bg-[#eeeee9] px-3 py-2">
+                  <div className="w-7 h-7 rounded-full bg-[#1c3a13] text-[#fcfcf7] flex items-center justify-center text-xs font-medium flex-shrink-0">
+                    {getInitials(targetUser.name)}
+                  </div>
+                  <div className="min-w-0 flex-1 flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-[#1c3a13] truncate">{targetUser.name}</span>
+                    <RoleBadge role={targetUser.role} />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTargetUser(null)}
+                    className="text-[#1c3a13]/40 hover:text-[#1c3a13] flex-shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#1c3a13]/40" />
+                    <input
+                      value={targetQuery}
+                      onChange={(e) => setTargetQuery(e.target.value)}
+                      placeholder="Search by name or phone…"
+                      className="w-full pl-8 pr-3 py-2 text-sm border border-[#eeeee9] rounded-lg bg-[#fcfcf7] text-[#1c3a13] placeholder-[#1c3a13]/40 focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/20 focus:border-[#1c3a13]"
+                    />
+                    {targetSearching && (
+                      <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-[#1c3a13]/40" />
+                    )}
+                  </div>
+                  {targetResults.length > 0 && (
+                    <div className="mt-1.5 space-y-1 max-h-40 overflow-y-auto rounded-lg border border-[#eeeee9] p-1">
+                      {targetResults.map((u) => (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => { setTargetUser(u); setTargetQuery(""); setTargetResults([]); }}
+                          className="w-full text-left flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-[#eeeee9] transition-colors"
+                        >
+                          <div className="w-7 h-7 rounded-full bg-[#1c3a13] text-[#fcfcf7] flex items-center justify-center text-xs font-medium flex-shrink-0">
+                            {getInitials(u.name)}
+                          </div>
+                          <div className="min-w-0 flex-1 flex items-center gap-1.5">
+                            <span className="text-sm font-medium text-[#1c3a13] truncate">{u.name}</span>
+                            <RoleBadge role={u.role} />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {targetQuery.length >= 1 && !targetSearching && targetResults.length === 0 && (
+                    <p className="text-xs text-[#1c3a13]/40 mt-1.5">No users found</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Category */}

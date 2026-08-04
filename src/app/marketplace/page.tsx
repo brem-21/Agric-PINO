@@ -240,6 +240,20 @@ export default function MarketplacePage() {
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
   const latestRequestId = useRef(0);
+  const [availableCategories, setAvailableCategories] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/listings/facets")
+      .then((r) => r.json())
+      .then((d) => setAvailableCategories(d.categories ?? []))
+      .catch(() => setAvailableCategories([]));
+  }, []);
+
+  // Only show categories that actually have active listings right now — the
+  // full PRODUCE_CATEGORIES list stays as the label/emoji source of truth.
+  const filterableCategories = PRODUCE_CATEGORIES.filter(
+    (cat) => availableCategories === null || availableCategories.includes(cat.value)
+  );
 
   const fetchListings = useCallback(async () => {
     // Guard against out-of-order responses: if the user changes filters again
@@ -417,7 +431,10 @@ export default function MarketplacePage() {
             <div className="bg-[#eeeee9] rounded-2xl p-4 space-y-3">
               <h3 className="font-medium text-[#1c3a13] text-sm">Category</h3>
               <div className="space-y-2">
-                {PRODUCE_CATEGORIES.map((cat) => (
+                {filterableCategories.length === 0 && (
+                  <p className="text-xs text-[#1c3a13]/40">No categories available yet.</p>
+                )}
+                {filterableCategories.map((cat) => (
                   <label key={cat.value} className="flex items-center gap-2.5 cursor-pointer group">
                     <input
                       type="checkbox"

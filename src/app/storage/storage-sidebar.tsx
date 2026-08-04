@@ -14,6 +14,8 @@ import {
   X,
   ChevronRight,
   AlertTriangle,
+  Dumbbell,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarWithStatus } from "@/components/shared/online-indicator";
@@ -24,17 +26,22 @@ const NAV_ITEMS = [
   { href: "/storage/profile", label: "Facility Profile", icon: Warehouse },
   { href: "/storage/bookings", label: "Bookings", icon: CalendarClock },
   { href: "/storage/inventory", label: "Inventory", icon: Package },
+  { href: "/storage/customers", label: "My Customers", icon: Users },
   { href: "/storage/complaints", label: "Report Incident", icon: AlertTriangle },
 ];
 
 interface StorageSidebarProps {
   user: { name: string; phone: string; image?: string | null };
+  isIncidentTeam?: boolean;
 }
 
-export default function StorageSidebar({ user }: StorageSidebarProps) {
+export default function StorageSidebar({ user, isIncidentTeam }: StorageSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { collapsed, toggle } = useSidebarCollapse();
+  const navItems = isIncidentTeam
+    ? [...NAV_ITEMS, { href: "/incident-team", label: "Incident Team", icon: Dumbbell }]
+    : NAV_ITEMS;
 
   function NavContent({ collapsible = false }: { collapsible?: boolean }) {
     const isCollapsed = collapsible && collapsed;
@@ -64,7 +71,7 @@ export default function StorageSidebar({ user }: StorageSidebarProps) {
         </div>
 
         <nav className="flex-1 py-4 space-y-1 px-2">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label, icon: Icon }) => {
             const active =
               pathname === href ||
               (href !== "/storage/dashboard" && pathname.startsWith(href));

@@ -49,6 +49,7 @@ interface FormData {
   businessType: string;
   companyName: string;
   licensePlate: string;
+  vehicleType: string;
   facilityName: string;
 }
 
@@ -133,6 +134,7 @@ export default function RegisterPage() {
     businessType: "",
     companyName: "",
     licensePlate: "",
+    vehicleType: "MOTORBIKE",
     facilityName: "",
   });
 
@@ -207,6 +209,7 @@ export default function RegisterPage() {
     } else if (role === "LOGISTICS") {
       payload.companyName = form.companyName || undefined;
       payload.licensePlate = form.licensePlate || undefined;
+      payload.vehicleType = form.vehicleType;
     } else if (role === "STORAGE_FACILITY") {
       payload.facilityName = form.facilityName || undefined;
     }
@@ -677,12 +680,21 @@ export default function RegisterPage() {
                 {role === "LOGISTICS" && (
                   <div className="space-y-4 rounded-lg border border-[#eeeee9] bg-[#eeeee9] p-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-lg">🏍️</span>
+                      <span className="text-lg">{form.vehicleType === "TRUCK" ? "🚛" : "🏍️"}</span>
                       <p className="text-sm font-medium text-[#1c3a13]">Rider Information</p>
                     </div>
-                    <p className="text-xs text-[#1c3a13]/50">
-                      All logistics providers on Lorgric use motorbikes for last-mile delivery.
-                    </p>
+                    <div className="space-y-2">
+                      <Label className="text-[#1c3a13] text-sm font-medium">Vehicle Type</Label>
+                      <Select value={form.vehicleType} onValueChange={(v) => updateForm("vehicleType", v)}>
+                        <SelectTrigger className="bg-[#fcfcf7] border border-[#eeeee9] rounded-lg focus:ring-[#1c3a13]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="MOTORBIKE">🏍️ Motorbike — last-mile delivery</SelectItem>
+                          <SelectItem value="TRUCK">🚛 Truck — bulk hauls, e.g. to/from a storage facility</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="companyName" className="text-[#1c3a13] text-sm font-medium">Trading Name</Label>

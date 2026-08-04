@@ -8,7 +8,7 @@ import { VerifiedBadge } from "@/components/shared/verified-badge";
 import { ProfileImageUpload } from "@/components/shared/profile-image-upload";
 import { Phone, MapPin, Star, Leaf, ShoppingBag, Bike, Warehouse, ShieldCheck, ChevronRight, ArrowLeft } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { VERIFICATION_FEES } from "@/lib/verification";
+import { isVerificationApplicableRole } from "@/lib/verification";
 import { getDashboardPath } from "@/lib/dashboard-path";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -79,8 +79,8 @@ export default async function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Verification entry point — only applicable roles have a fee tier */}
-        {VERIFICATION_FEES[user.role] !== undefined && (
+        {/* Verification entry point — ADMIN has no verification tier */}
+        {isVerificationApplicableRole(user.role) && (
           <Link href="/verification" className="block">
             <Card className="bg-[#fcfcf7] border border-[#eeeee9] rounded-2xl hover:bg-[#eeeee9] transition-colors">
               <CardContent className="py-4 flex items-center gap-3">
@@ -93,6 +93,29 @@ export default async function ProfilePage() {
                   </p>
                   <p className="text-xs text-[#1c3a13]/50">
                     {user.isVerified ? "Your account is verified" : "Apply for an identity verification badge"}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-[#1c3a13]/40 flex-shrink-0" />
+              </CardContent>
+            </Card>
+          </Link>
+        )}
+
+        {/* Incident Team entry point — an add-on capability, not a role, so
+            it's offered to any role (including admins, who already have it). */}
+        {user.role !== "ADMIN" && (
+          <Link href={user.isIncidentTeam ? "/incident-team" : "/incident-team/apply"} className="block">
+            <Card className="bg-[#fcfcf7] border border-[#eeeee9] rounded-2xl hover:bg-[#eeeee9] transition-colors">
+              <CardContent className="py-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eeeee9] flex-shrink-0">
+                  <span className="text-lg" role="img" aria-label="dumbbell">💪</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-[#1c3a13]">
+                    {user.isIncidentTeam ? "Incident Team Portal" : "Apply to be a Macho"}
+                  </p>
+                  <p className="text-xs text-[#1c3a13]/50">
+                    {user.isIncidentTeam ? "Macho Men Association — review and resolve complaints" : "Join the Macho Men Association incident-response team"}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-[#1c3a13]/40 flex-shrink-0" />

@@ -13,6 +13,7 @@ import {
   X,
   ChevronRight,
   AlertTriangle,
+  Dumbbell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarWithStatus } from "@/components/shared/online-indicator";
@@ -28,12 +29,16 @@ const NAV_ITEMS = [
 
 interface LogisticsSidebarProps {
   user: { name: string; phone: string; image?: string | null };
+  isIncidentTeam?: boolean;
 }
 
-export default function LogisticsSidebar({ user }: LogisticsSidebarProps) {
+export default function LogisticsSidebar({ user, isIncidentTeam }: LogisticsSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { collapsed, toggle } = useSidebarCollapse();
+  const navItems = isIncidentTeam
+    ? [...NAV_ITEMS, { href: "/incident-team", label: "Incident Team", icon: Dumbbell }]
+    : NAV_ITEMS;
 
   function NavContent({ collapsible = false }: { collapsible?: boolean }) {
     const isCollapsed = collapsible && collapsed;
@@ -63,7 +68,7 @@ export default function LogisticsSidebar({ user }: LogisticsSidebarProps) {
         </div>
 
         <nav className="flex-1 py-4 space-y-1 px-2">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label, icon: Icon }) => {
             const active =
               pathname === href ||
               (href !== "/logistics/dashboard" && pathname.startsWith(href));

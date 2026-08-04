@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 interface SessionGuardProps {
   /** Roles allowed to view this section. */
   expectedRoles: string[];
+  /** Also allow through if this boolean session flag is true (e.g. isIncidentTeam) — for access gated by an add-on capability rather than the primary role. */
+  expectedFlag?: "isIncidentTeam";
 }
 
 /**
@@ -15,7 +17,7 @@ interface SessionGuardProps {
  * switched in another (the server-side auth() check in the layout still owns
  * the actual access decision; this just stops it from being skipped).
  */
-export function SessionGuard({ expectedRoles }: SessionGuardProps) {
+export function SessionGuard({ expectedRoles, expectedFlag }: SessionGuardProps) {
   const router = useRouter();
 
   useEffect(() => {
@@ -24,7 +26,8 @@ export function SessionGuard({ expectedRoles }: SessionGuardProps) {
         const res = await fetch("/api/auth/session", { cache: "no-store" });
         const session = await res.json();
         const role = session?.user?.role as string | undefined;
-        const ok = role && expectedRoles.includes(role);
+        const flagOk = expectedFlag ? session?.user?.[expectedFlag] === true : false;
+        const ok = (role && expectedRoles.includes(role)) || flagOk;
         if (!ok) router.refresh();
       } catch {
         // Network hiccup — don't punish the user for a failed background check.
@@ -41,7 +44,7 @@ export function SessionGuard({ expectedRoles }: SessionGuardProps) {
       window.removeEventListener("focus", check);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [expectedRoles, router]);
+  }, [expectedRoles, expectedFlag, router]);
 
   return null;
 }

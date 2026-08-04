@@ -14,6 +14,20 @@ const profileSchema = z.object({
   acceptedCategories: z
     .array(z.enum(["VEGETABLES", "GRAINS", "TUBERS", "FRUITS", "LEGUMES", "LIVESTOCK"]))
     .min(1),
+  equipment: z
+    .array(
+      z.enum([
+        "REFRIGERATORS",
+        "COOLERS",
+        "DRYERS",
+        "DRYING_PANS",
+        "VENTILATION_FANS",
+        "WEIGHING_SCALES",
+        "PALLETS_RACKING",
+        "BACKUP_GENERATOR",
+      ])
+    )
+    .optional(),
   operatingHours: z.string().optional(),
 });
 

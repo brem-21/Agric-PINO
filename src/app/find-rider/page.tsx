@@ -205,6 +205,7 @@ export default function FindDeliveryPage() {
     id: r.id,
     name: r.name,
     phone: r.phone ?? "",
+    vehicleType: r.vehicleType,
     companyName: r.companyName,
     licensePlate: r.licensePlate,
     rating: r.rating ?? 0,
@@ -414,6 +415,7 @@ export default function FindDeliveryPage() {
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1">
+                              <span className="text-sm">{unit.vehicleType === "TRUCK" ? "🚛" : "🏍️"}</span>
                               <span className="text-sm font-medium text-[#1c3a13] truncate">
                                 {unit.name}
                               </span>

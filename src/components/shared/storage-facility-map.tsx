@@ -10,4 +10,4 @@ export const StorageFacilityMap = dynamic(() => import("./storage-facility-map-i
     </div>
   ),
 });
-export type { StorageFacility } from "./storage-facility-map-inner";
+export type { StorageFacility, RouteOption } from "./storage-facility-map-inner";

@@ -19,7 +19,7 @@ export default async function FarmerLayout({ children }: { children: React.React
       <SessionGuard expectedRoles={["FARMER"]} />
       <PresenceTracker isRider={false} />
       <SidebarCollapseProvider>
-        <FarmerSidebar user={{ name: session.user.name ?? "Farmer", phone: session.user.phone ?? "", image: session.user.image }} />
+        <FarmerSidebar user={{ name: session.user.name ?? "Farmer", phone: session.user.phone ?? "", image: session.user.image }} isIncidentTeam={session.user.isIncidentTeam} />
         <div className="fixed top-4 right-4 z-50">
           <NotificationBell colorClass="text-[#1c3a13]" buttonClassName="bg-[#fcfcf7] shadow-md border border-[#eeeee9] hover:bg-[#eeeee9]" />
         </div>

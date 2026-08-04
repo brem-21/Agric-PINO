@@ -9,11 +9,12 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { VerificationStatusCard } from "@/components/shared/verification-status-card";
+import { AiStorageTipsCard } from "@/components/shared/ai-storage-tips-card";
 
 type VerificationStatus = {
   isVerified: boolean;
   verifiedAt: string | null;
-  latestRequest: { status: "PENDING" | "APPROVED" | "REJECTED"; paymentStatus: "UNPAID" | "PAID" | "REFUNDED" } | null;
+  latestRequest: { status: "PENDING" | "APPROVED" | "REJECTED" } | null;
 };
 
 type Analytics = {
@@ -82,7 +83,6 @@ export default function StorageDashboardPage() {
           isVerified={verification.isVerified}
           verifiedAt={verification.verifiedAt}
           latestRequestStatus={verification.latestRequest?.status ?? null}
-          latestRequestPaymentStatus={verification.latestRequest?.paymentStatus ?? null}
         />
       )}
       <div>
@@ -112,6 +112,8 @@ export default function StorageDashboardPage() {
           <Link href="/storage/inventory">View Inventory</Link>
         </Button>
       </div>
+
+      <AiStorageTipsCard />
     </div>
   );
 }

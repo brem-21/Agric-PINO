@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Loader2, CheckCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Loader2, CheckCircle, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 
@@ -52,7 +52,11 @@ interface Complaint {
   createdAt: string;
   resolvedAt: string | null;
   reporter: { id: string; name: string; phone: string; role: string };
+  target: { id: string; name: string; phone: string; role: string } | null;
+  assignedTo: { id: string; name: string } | null;
 }
+
+interface IncidentTeamMember { id: string; name: string; role: string }
 
 interface Pagination { page: number; total: number; pages: number }
 
@@ -75,6 +79,7 @@ export default function AdminComplaintsPage() {
   const [draftStatus, setDraftStatus] = useState<Record<string, ComplaintStatus>>({});
   const [draftNotes, setDraftNotes] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
+  const [machos, setMachos] = useState<IncidentTeamMember[]>([]);
 
   const fetchComplaints = useCallback(async () => {
     setLoading(true);
@@ -88,6 +93,31 @@ export default function AdminComplaintsPage() {
   }, [tab, page]);
 
   useEffect(() => { fetchComplaints(); }, [fetchComplaints]);
+  useEffect(() => {
+    fetch("/api/admin/incident-team-members")
+      .then((r) => r.json())
+      .then((d) => setMachos(d.members ?? []))
+      .catch(() => {});
+  }, []);
+
+  async function assignTo(complaint: Complaint, assignedToId: string | null) {
+    setUpdating((prev) => ({ ...prev, [complaint.id]: true }));
+    try {
+      const res = await fetch(`/api/admin/complaints/${complaint.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignedToId }),
+      });
+      if (res.ok) {
+        const assignedTo = assignedToId ? machos.find((m) => m.id === assignedToId) ?? null : null;
+        setComplaints((prev) => prev.map((c) =>
+          c.id === complaint.id ? { ...c, assignedTo: assignedTo ? { id: assignedTo.id, name: assignedTo.name } : null } : c
+        ));
+      }
+    } finally {
+      setUpdating((prev) => ({ ...prev, [complaint.id]: false }));
+    }
+  }
 
   async function updateComplaint(complaint: Complaint) {
     const status = draftStatus[complaint.id] ?? complaint.status;
@@ -171,6 +201,15 @@ export default function AdminComplaintsPage() {
                         <span>·</span>
                         <span>{formatDate(complaint.createdAt)}</span>
                       </div>
+                      {complaint.target && (
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-[#1c3a13]/50 mt-1">
+                          <span>About:</span>
+                          <span className={`rounded-full px-1.5 py-0.5 font-medium ${ROLE_BADGE[complaint.target.role] ?? "bg-[#eeeee9] text-[#1c3a13]/70"}`}>
+                            {complaint.target.role}
+                          </span>
+                          <span className="font-medium text-[#1c3a13]">{complaint.target.name}</span>
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => setExpanded((prev) => ({ ...prev, [complaint.id]: !prev[complaint.id] }))}
@@ -178,6 +217,22 @@ export default function AdminComplaintsPage() {
                     >
                       {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </button>
+                  </div>
+
+                  {/* Assign to Macho */}
+                  <div className="flex items-center gap-2 mt-3">
+                    <Dumbbell className="h-3.5 w-3.5 text-[#1c3a13]/40 flex-shrink-0" />
+                    <select
+                      value={complaint.assignedTo?.id ?? ""}
+                      disabled={updating[complaint.id]}
+                      onChange={(e) => assignTo(complaint, e.target.value || null)}
+                      className="rounded-full border border-[#eeeee9] bg-[#fcfcf7] px-3 py-1 text-xs font-medium text-[#1c3a13] focus:border-[#1c3a13] focus:outline-none"
+                    >
+                      <option value="">Unassigned</option>
+                      {machos.map((m) => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Admin notes preview */}

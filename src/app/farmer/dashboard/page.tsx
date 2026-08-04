@@ -3,11 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/utils";
-import { Package, ShoppingCart, CheckCircle, DollarSign, TrendingDown, PlusCircle, ExternalLink, Navigation } from "lucide-react";
+import { Package, ShoppingCart, CheckCircle, DollarSign, TrendingDown, PlusCircle, ExternalLink, Navigation, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WeatherWidget } from "@/components/shared/weather-widget";
 import { VerificationStatusCard } from "@/components/shared/verification-status-card";
+import { computeLossPercentage, lossColorClass } from "@/lib/post-harvest-loss";
+import { getOrGenerateFarmerLossTips } from "@/lib/ai-insights";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "warning" | "success" | "outline"> = {
   PENDING: "warning",
@@ -79,6 +81,7 @@ export default async function FarmerDashboardPage() {
         quantity: true,
         pricePerUnit: true,
         expiryDate: true,
+        createdAt: true,
         orders: { select: { quantity: true } },
       },
     }),
@@ -86,7 +89,7 @@ export default async function FarmerDashboardPage() {
     prisma.verificationRequest.findFirst({
       where: { userId: farmerId },
       orderBy: { createdAt: "desc" },
-      select: { status: true, paymentStatus: true },
+      select: { status: true },
     }),
   ]);
 
@@ -95,35 +98,11 @@ export default async function FarmerDashboardPage() {
   const totalEarnings =
     (paidOrdersAgg._sum.totalAmount ?? 0) - (paidOrdersAgg._sum.facilityCommissionAmount ?? 0);
 
-  // Post-harvest loss %, by value rather than raw quantity (crops are listed in
-  // different units — kg, bags, crates — so summing quantity directly across
-  // listings isn't meaningful, but GHS value is). ProduceListing.quantity is a
-  // live "remaining stock" counter (decremented per order), not the amount
-  // originally listed, so the original amount is reconstructed as remaining +
-  // sum of every order ever placed against that listing. A listing counts as
-  // "lost" once its expiry date has passed with stock still unsold — nothing
-  // in this codebase auto-flips a listing to EXPIRED, so this is computed
-  // directly from expiryDate rather than relying on listing.status.
-  const now = new Date();
-  let harvestedValue = 0;
-  let lostValue = 0;
-  for (const listing of lossListings) {
-    const soldQuantity = listing.orders.reduce((sum, o) => sum + o.quantity, 0);
-    const originalQuantity = listing.quantity + soldQuantity;
-    harvestedValue += originalQuantity * listing.pricePerUnit;
-    if (listing.expiryDate && listing.expiryDate < now) {
-      lostValue += listing.quantity * listing.pricePerUnit;
-    }
-  }
-  const lossPercentage = harvestedValue > 0 ? (lostValue / harvestedValue) * 100 : null;
-  const lossColor =
-    lossPercentage === null
-      ? "bg-[#eeeee9] text-[#1c3a13]"
-      : lossPercentage < 10
-      ? "bg-[#d3fa99] text-[#1c3a13]"
-      : lossPercentage < 25
-      ? "bg-amber-100 text-amber-700"
-      : "bg-red-100 text-red-700";
+  const lossPercentage = computeLossPercentage(lossListings);
+  const lossColor = lossColorClass(lossPercentage);
+
+  // Best-effort — a missing/failing OpenRouter call should never break the dashboard.
+  const lossTip = await getOrGenerateFarmerLossTips(farmerId).catch(() => null);
 
   const stats = [
     { label: "Active Listings", value: activeListings, icon: Package, color: "bg-[#eeeee9] text-[#1c3a13]" },
@@ -145,7 +124,6 @@ export default async function FarmerDashboardPage() {
         isVerified={!!user?.isVerified}
         verifiedAt={user?.verifiedAt ?? null}
         latestRequestStatus={latestVerificationRequest?.status ?? null}
-        latestRequestPaymentStatus={latestVerificationRequest?.paymentStatus ?? null}
       />
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -181,6 +159,19 @@ export default async function FarmerDashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* AI loss-reduction tip */}
+      {lossTip && (
+        <div className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] p-5 flex items-start gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#d3fa99] flex-shrink-0">
+            <Sparkles className="h-4 w-4 text-[#1c3a13]" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[#1c3a13]">Tip to reduce post-harvest loss</p>
+            <p className="text-sm text-[#1c3a13]/70 mt-1 whitespace-pre-wrap">{lossTip.content}</p>
+          </div>
+        </div>
+      )}
 
       {/* Recent Orders */}
       <div className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9]">

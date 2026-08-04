@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  VERIFICATION_TRANSACTION_THRESHOLD,
+  VERIFICATION_APPLICABLE_ROLES,
+  getCompletedTransactionCount,
+} from "@/lib/verification";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -9,12 +14,42 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
+  const view = searchParams.get("view"); // "eligible" for the proactive-outreach queue
   const status = searchParams.get("status");
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
 
+  if (view === "eligible") {
+    // Unverified users who've already crossed the activity threshold but have
+    // no non-rejected request yet — computed live, no stored/flagged column.
+    const unverifiedUsers = await prisma.user.findMany({
+      where: { role: { in: [...VERIFICATION_APPLICABLE_ROLES] }, isVerified: false },
+      select: { id: true, name: true, phone: true, role: true, createdAt: true },
+    });
+
+    const existingRequests = await prisma.verificationRequest.findMany({
+      where: { userId: { in: unverifiedUsers.map((u) => u.id) }, status: { not: "REJECTED" } },
+      select: { userId: true },
+    });
+    const alreadyApplied = new Set(existingRequests.map((r) => r.userId));
+
+    const counted = await Promise.all(
+      unverifiedUsers
+        .filter((u) => !alreadyApplied.has(u.id))
+        .map(async (u) => ({
+          ...u,
+          completedCount: await getCompletedTransactionCount(u.id, u.role),
+        }))
+    );
+
+    const eligible = counted
+      .filter((u) => u.completedCount >= VERIFICATION_TRANSACTION_THRESHOLD)
+      .sort((a, b) => b.completedCount - a.completedCount);
+
+    return NextResponse.json({ data: eligible, threshold: VERIFICATION_TRANSACTION_THRESHOLD });
+  }
+
   const where = {
-    paymentStatus: "PAID" as const,
     ...(status && { status: status as never }),
   };
 
@@ -29,7 +64,6 @@ export async function GET(req: NextRequest) {
         residenceLocation: true,
         idPhotoFront: true,
         idPhotoBack: true,
-        fee: true,
         status: true,
         reviewNotes: true,
         reviewedAt: true,

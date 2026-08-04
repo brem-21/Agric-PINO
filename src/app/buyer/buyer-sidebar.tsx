@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Truck,
   AlertTriangle,
+  Dumbbell,
 } from "lucide-react";
 import { SignOutButton } from "@/components/shared/signout-button";
 import { cn } from "@/lib/utils";
@@ -31,12 +32,16 @@ const NAV_ITEMS = [
 
 interface BuyerSidebarProps {
   user: { name: string; phone: string; image?: string | null };
+  isIncidentTeam?: boolean;
 }
 
-export default function BuyerSidebar({ user }: BuyerSidebarProps) {
+export default function BuyerSidebar({ user, isIncidentTeam }: BuyerSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { collapsed, toggle } = useSidebarCollapse();
+  const navItems = isIncidentTeam
+    ? [...NAV_ITEMS, { href: "/incident-team", label: "Incident Team", icon: Dumbbell }]
+    : NAV_ITEMS;
 
   function NavContent({ collapsible = false }: { collapsible?: boolean }) {
     const isCollapsed = collapsible && collapsed;
@@ -66,7 +71,7 @@ export default function BuyerSidebar({ user }: BuyerSidebarProps) {
         </div>
 
         <nav className="flex-1 py-4 space-y-1 px-2">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label, icon: Icon }) => {
             const exactMatch = ["/buyer/dashboard", "/marketplace", "/find-rider"].includes(href);
             const active = pathname === href || (!exactMatch && pathname.startsWith(href));
             return (

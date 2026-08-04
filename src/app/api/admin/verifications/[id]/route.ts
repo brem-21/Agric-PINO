@@ -26,9 +26,6 @@ export async function PATCH(
 
   const request = await prisma.verificationRequest.findUnique({ where: { id } });
   if (!request) return NextResponse.json({ error: "Verification request not found" }, { status: 404 });
-  if (request.paymentStatus !== "PAID") {
-    return NextResponse.json({ error: "This request has not completed payment yet" }, { status: 400 });
-  }
   if (request.status !== "PENDING") {
     return NextResponse.json({ error: "This request has already been reviewed" }, { status: 409 });
   }

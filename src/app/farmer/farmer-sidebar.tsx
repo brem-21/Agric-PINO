@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Warehouse,
   AlertTriangle,
+  Dumbbell,
 } from "lucide-react";
 import { SignOutButton } from "@/components/shared/signout-button";
 import { cn } from "@/lib/utils";
@@ -36,12 +37,16 @@ const NAV_ITEMS = [
 
 interface FarmerSidebarProps {
   user: { name: string; phone: string; image?: string | null };
+  isIncidentTeam?: boolean;
 }
 
-export default function FarmerSidebar({ user }: FarmerSidebarProps) {
+export default function FarmerSidebar({ user, isIncidentTeam }: FarmerSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { collapsed, toggle } = useSidebarCollapse();
+  const navItems = isIncidentTeam
+    ? [...NAV_ITEMS, { href: "/incident-team", label: "Incident Team", icon: Dumbbell }]
+    : NAV_ITEMS;
 
   function NavContent({ collapsible = false }: { collapsible?: boolean }) {
     const isCollapsed = collapsible && collapsed;
@@ -73,7 +78,7 @@ export default function FarmerSidebar({ user }: FarmerSidebarProps) {
 
         {/* Nav links */}
         <nav className="flex-1 py-4 space-y-1 px-2">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label, icon: Icon }) => {
             const active =
               pathname === href ||
               (href !== "/farmer/dashboard" && href !== "/find-rider" && pathname.startsWith(href));

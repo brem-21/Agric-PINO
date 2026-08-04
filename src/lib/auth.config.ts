@@ -18,6 +18,7 @@ export const authConfig: NextAuthConfig = {
     async session({ session, token }) {
       if (token) {
         (session.user as unknown as Record<string, unknown>).role = token.role;
+        (session.user as unknown as Record<string, unknown>).isIncidentTeam = token.isIncidentTeam ?? false;
       }
       return session;
     },
@@ -34,12 +35,14 @@ export const authConfig: NextAuthConfig = {
       if (!isLoggedIn) return false;
 
       const role = (auth?.user as { role?: string })?.role;
+      const isIncidentTeam = (auth?.user as { isIncidentTeam?: boolean })?.isIncidentTeam;
 
       if (pathname.startsWith("/farmer") && role !== "FARMER" && role !== "ADMIN") return false;
       if (pathname.startsWith("/buyer") && role !== "BUYER" && role !== "ADMIN") return false;
       if (pathname.startsWith("/logistics") && role !== "LOGISTICS" && role !== "ADMIN") return false;
       if (pathname.startsWith("/admin") && role !== "ADMIN") return false;
       if (pathname.startsWith("/storage") && role !== "STORAGE_FACILITY" && role !== "ADMIN") return false;
+      if (pathname.startsWith("/incident-team") && pathname !== "/incident-team/apply" && role !== "ADMIN" && !isIncidentTeam) return false;
 
       return true;
     },

@@ -87,7 +87,7 @@ export default async function LogisticsDashboardPage() {
     prisma.verificationRequest.findFirst({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
-      select: { status: true, paymentStatus: true },
+      select: { status: true },
     }),
   ]);
 
@@ -109,7 +109,6 @@ export default async function LogisticsDashboardPage() {
         isVerified={isVerified}
         verifiedAt={user?.verifiedAt ?? null}
         latestRequestStatus={latestVerificationRequest?.status ?? null}
-        latestRequestPaymentStatus={latestVerificationRequest?.paymentStatus ?? null}
       />
       <div>
         <h1 className="text-2xl font-light tracking-tight text-[#1c3a13]">

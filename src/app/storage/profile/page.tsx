@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LocationPicker } from "@/components/shared/location-picker";
 import { Loader2, LocateFixed, Map, CheckCircle, AlertCircle } from "lucide-react";
-import { PRODUCE_CATEGORIES } from "@/lib/utils";
+import { PRODUCE_CATEGORIES, STORAGE_EQUIPMENT } from "@/lib/utils";
 
 const STORAGE_TYPES = [
   { value: "COLD_CHAIN", label: "Cold Chain (refrigerated)", hint: "Best for tomatoes, mangoes, watermelons, leafy vegetables" },
@@ -24,6 +24,7 @@ interface Facility {
   storageTypes: string[];
   capacityTonnes: number | null;
   acceptedCategories: string[];
+  equipment: string[];
   operatingHours: string | null;
   approvalStatus: string;
 }
@@ -45,6 +46,7 @@ export default function StorageProfilePage() {
   const [storageTypes, setStorageTypes] = useState<string[]>([]);
   const [capacityTonnes, setCapacityTonnes] = useState("");
   const [acceptedCategories, setAcceptedCategories] = useState<string[]>([]);
+  const [equipment, setEquipment] = useState<string[]>([]);
   const [operatingHours, setOperatingHours] = useState("");
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function StorageProfilePage() {
           setStorageTypes(f.storageTypes);
           setCapacityTonnes(f.capacityTonnes?.toString() ?? "");
           setAcceptedCategories(f.acceptedCategories);
+          setEquipment(f.equipment ?? []);
           setOperatingHours(f.operatingHours ?? "");
           setApprovalStatus(f.approvalStatus);
         }
@@ -112,6 +115,7 @@ export default function StorageProfilePage() {
         storageTypes,
         capacityTonnes: capacityTonnes ? parseFloat(capacityTonnes) : undefined,
         acceptedCategories,
+        equipment,
         operatingHours: operatingHours || undefined,
       }),
     });
@@ -248,6 +252,23 @@ export default function StorageProfilePage() {
                       onChange={() => toggle(acceptedCategories, setAcceptedCategories, cat.value)}
                       className="h-3.5 w-3.5 rounded border-[#eeeee9] text-[#1c3a13]" />
                     <span className="text-xs text-[#1c3a13]">{cat.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[#1c3a13]">Equipment &amp; Resources</Label>
+              <p className="text-xs text-[#1c3a13]/50">
+                Advertise what your facility actually has — this feeds the AI recommendation shown to farmers.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {STORAGE_EQUIPMENT.map((eq) => (
+                  <label key={eq.value} className="flex items-center gap-1.5 cursor-pointer rounded-full border border-[#eeeee9] px-3 py-1.5">
+                    <input type="checkbox" checked={equipment.includes(eq.value)}
+                      onChange={() => toggle(equipment, setEquipment, eq.value)}
+                      className="h-3.5 w-3.5 rounded border-[#eeeee9] text-[#1c3a13]" />
+                    <span className="text-xs text-[#1c3a13]">{eq.label}</span>
                   </label>
                 ))}
               </div>

@@ -168,6 +168,17 @@ export const FACILITY_COMMISSION_RATE = 0.05;
 
 export const UNITS = ["kg", "bags", "crates", "bundles", "pieces", "tonnes", "litres"];
 
+export const STORAGE_EQUIPMENT = [
+  { value: "REFRIGERATORS", label: "Refrigerators" },
+  { value: "COOLERS", label: "Coolers" },
+  { value: "DRYERS", label: "Dryers" },
+  { value: "DRYING_PANS", label: "Drying Pans" },
+  { value: "VENTILATION_FANS", label: "Ventilation Fans" },
+  { value: "WEIGHING_SCALES", label: "Weighing Scales" },
+  { value: "PALLETS_RACKING", label: "Pallets / Racking" },
+  { value: "BACKUP_GENERATOR", label: "Backup Generator" },
+];
+
 // Haversine formula — returns distance in km between two lat/lng points
 export function haversineDistance(
   lat1: number, lon1: number,

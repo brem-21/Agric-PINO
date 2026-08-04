@@ -6,14 +6,12 @@ interface VerificationStatusCardProps {
   isVerified: boolean;
   verifiedAt: string | Date | null;
   latestRequestStatus: "PENDING" | "APPROVED" | "REJECTED" | null;
-  latestRequestPaymentStatus: "UNPAID" | "PAID" | "REFUNDED" | null;
 }
 
 export function VerificationStatusCard({
   isVerified,
   verifiedAt,
   latestRequestStatus,
-  latestRequestPaymentStatus,
 }: VerificationStatusCardProps) {
   if (isVerified) {
     return (
@@ -30,7 +28,7 @@ export function VerificationStatusCard({
     );
   }
 
-  const underReview = latestRequestStatus === "PENDING" && latestRequestPaymentStatus === "PAID";
+  const underReview = latestRequestStatus === "PENDING";
   const rejected = latestRequestStatus === "REJECTED";
 
   if (underReview) {
