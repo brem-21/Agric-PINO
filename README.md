@@ -42,6 +42,8 @@ This document walks through every feature currently in the product, organized by
 - **End-to-end encrypted** in-app messaging (AES-256-GCM at rest)
 - **Real-time delivery tracking** with support for multi-rider relay handoffs
 - **Live platform stats** (active farmers, listings, districts, produce delivered) shown publicly on the landing page
+- **Binding price negotiation**: a buyer can make a structured offer (quantity + price + expiry) instead of haggling over chat — the farmer accepts, counters, or declines, and acceptance auto-generates a real order at the agreed terms
+- **Risk-based listing approval**: a verified farmer with a clean record and a price in line with the market auto-publishes immediately; only price outliers or flagged accounts wait on manual admin review
 
 ---
 
@@ -111,19 +113,24 @@ At-a-glance stat tiles (active listings, pending orders, completed orders, total
 **Why it matters:** gives a farmer a single-glance view of their business health without navigating through multiple separate pages.
 
 ### Produce listing management
-Farmers create listings with crop type (autocomplete from common Ghanaian crops), category, quantity, unit, price, description, harvest/expiry dates, location, and up to 5 photos (uploaded to Cloudinary). Every new listing is invisible to buyers until an **admin approves it** — the listing's own lifecycle status (Active/Draft/Sold/Expired) is tracked separately from its moderation status (Pending/Approved/Rejected), so a farmer's own listings page clearly distinguishes "this is live" from "this is still awaiting review."
+Farmers create listings with crop type (autocomplete from common Ghanaian crops), category, quantity, unit, price, description, harvest/expiry dates, location, and up to 5 photos (uploaded to Cloudinary). A listing doesn't default into a manual review queue: it **auto-publishes immediately** when the farmer is verified, has no open complaints against them, and the price sits within a normal band of the category's recent median — the farmer sees "It's live on the marketplace now — no waiting" the moment they submit. Only a price that's a statistical outlier, or a farmer with an open complaint, gets routed to manual admin review instead, and that farmer is told exactly why ("It needs a quick admin review"). The listing's own lifecycle status (Active/Draft/Sold/Expired) is tracked separately from its moderation status (Pending/Approved/Rejected either way).
 
 Each farmer's own listings table also surfaces a **spoilage-risk indicator** — computed from the listing's expiry date — the moment produce is within a week of spoiling, escalating from "days left to sell" to "sell soon" to "sell today," so a farmer knows to drop the price or reach out to a bulk/processor buyer before the stock is a total loss instead of finding out after the fact.
 
-**Why it matters:** this is the core reason a farmer joins the platform — the ability to reach buyers directly — while the moderation gate stops fraudulent or spam listings from ever reaching the storefront, and the spoilage-risk flag turns "produce quietly rotting unsold," the single most common driver of post-harvest loss in the research, into something a farmer can act on in time.
+**Why it matters:** this is the core reason a farmer joins the platform — the ability to reach buyers directly — and risk-based auto-approval keeps the manual review queue proportional to actual risk instead of gatekeeping every routine listing behind a human, which matters because produce spoils in hours-to-days, not however long a queue takes to clear. The spoilage-risk flag turns "produce quietly rotting unsold," the single most common driver of post-harvest loss in the research, into something a farmer can act on in time.
 
 ### Order management with a live status workflow
 A live-updating (polling every 20 seconds) table of incoming orders, each advanceable through its fulfillment lifecycle with a single button — Confirm Order → Mark Ready for Pickup — with rows visibly highlighting when a status just changed. Every order links to a printable delivery slip, and once delivered, to a one-click shortcut to rate the buyer.
 
 **Why it matters:** farmers manage order fulfillment without a phone call, and the buyer sees the same status update in near real time on their side.
 
+### Responding to offers
+Every buyer offer on a farmer's listing lands on a dedicated **Offers** page — quantity, proposed price, an optional message, and a countdown to when the offer expires (48 hours per round). A farmer can **Accept** it outright, **Counter** with different quantity/price terms, or **Decline** — and the platform enforces whose turn it is, so a farmer can't accept their own still-pending proposal and a buyer can't accept a counter before the farmer sends one. Accepting either side's terms instantly creates a real order at that exact price and quantity — no separate step, no relying on a phone call to confirm what was agreed.
+
+**Why it matters:** Ghanaian farm-to-market trade runs on haggling over price at the point of sale — without this, that negotiation happens over unstructured chat with no order ever generated from it, pushing the actual deal into a side-channel the platform can't see, measure, or protect.
+
 ### Transport/delivery requests
-Farmers can request a rider for any paid order — pre-filled with the listing's pickup location and the buyer's delivery address — or create a general transport request for other needs. They can accept a system-calculated fare (based on distance and cargo weight) or offer a custom negotiated price, and once a rider accepts, pay them directly through the platform. Pending requests can be cancelled.
+Farmers can request a rider for any paid order — pre-filled with the listing's pickup location and the buyer's delivery address — or create a general transport request for other needs. Typing a pickup/delivery address (rather than using GPS or picking a point on the map) still resolves to coordinates automatically in the background, so the fare/distance/ETA estimate always appears instead of silently staying blank. Farmers can accept the system-calculated fare (based on distance and cargo weight) or offer a custom negotiated price, and once a rider accepts, pay them directly through the platform. The request list refreshes on its own every 15 seconds, so a rider accepting or advancing a job shows up without the farmer needing to hit refresh. Pending requests can be cancelled.
 
 **Why it matters:** solves last-mile delivery — arguably Northern Ghana's single biggest farm-to-market bottleneck — inside the platform, instead of leaving farmers to arrange transport informally and unreliably.
 
@@ -155,6 +162,11 @@ A full storefront experience: debounced text search, multi-select category filte
 A full listing page with a photo slideshow, the farmer's profile card (star rating, farm size, bio, verified badge), a spoilage-urgency banner when the listing is nearing its expiry date, and — when the produce is stored at a facility — the facility's name and location shown as the effective pickup point, alongside an order panel with a quantity stepper capped at real available stock, a live running total, and a "Place Order" action. Buyers can still message the farmer directly at any time, whether or not the produce is currently in storage. After placing an order, a payment-choice panel appears immediately — mobile money or cash-on-delivery (if the farmer accepts it).
 
 **Why it matters:** turns browsing into a completed transaction without ever leaving the listing page.
+
+### Negotiating price with a binding offer
+Instead of only the listed price, a buyer can click **Make an Offer** and propose a quantity and price per unit (plus an optional note) directly from the listing page. The farmer sees it on their Offers page and can accept, counter with different terms, or decline; the buyer then does the same with any counter, back and forth, until someone accepts, declines, or 48 hours passes and it expires. A tracked **My Offers** page shows every offer's status and whose turn it is to act. The moment either side accepts, the platform creates a real order at the agreed price and quantity automatically — the negotiated price is binding, not just a number mentioned in chat.
+
+**Why it matters:** haggling over price is how this market actually works — without a structured offer flow, that negotiation happens in an unstructured message thread with no price field, no expiry, and no way to actually check out at the agreed price, which pushes buyers and farmers back toward an informal, unprotected side deal.
 
 ### AI-personalized recommendations
 Using the buyer's purchase history, browsing activity, and GPS location, an AI model selects the top nearby listings most relevant to that specific buyer and writes a short, friendly recommendation — deliverable both on the dashboard and as an SMS nudge.
@@ -235,9 +247,9 @@ A print-optimized, shareable order summary — a visual progress stepper, produc
 **Why it matters:** this is the paper trail — literally printable — that makes a physical handoff carry the same information as the digital order.
 
 ### Order tracking
-The customer-facing companion: a current status badge, a visual timeline, farmer/buyer verified-status cards, transport provider info with a call button, the full multi-rider relay chain if the delivery was handed off, and a live pickup-to-delivery map.
+The customer-facing companion: a current status badge, a visual timeline, farmer/buyer verified-status cards, transport provider info with a call button, the full multi-rider relay chain if the delivery was handed off, and a pickup-to-delivery map. While a delivery is assigned, picked up, or in transit, that map upgrades to a **live rider position** — pulled from the same GPS the rider's own app is already reporting — polling every 10 seconds and showing distance-to-destination and an ETA in minutes, instead of just the static pickup/delivery pins.
 
-**Why it matters:** answers "where's my order" for a buyer or farmer without anyone having to message or call.
+**Why it matters:** answers "where's my order" for a buyer or farmer without anyone having to message or call, and even a coarse live position beats no location at all for trust and planning in the low-connectivity rural areas this platform targets.
 
 ---
 
@@ -256,9 +268,9 @@ A searchable, filterable, paginated table of every user with activate/deactivate
 **Why it matters:** doubles as both the support/moderation toolkit and the direct escape hatch for granting admin access when needed, distinct from the self-service application flow.
 
 ### Listing approvals
-Every farmer produce listing requires admin approval before it appears on the public marketplace — admins approve or reject with an optional note shown back to the farmer.
+Most farmer listings auto-approve and never reach this queue — what lands here is specifically what needs a human: a listing flagged for a **price anomaly** (more than 50% off the category's recent median, shown with the exact deviation) sorts to the top with a visible ⚠️ badge, and anything still pending after 2 hours gets a "spoilage risk" badge since the produce behind it is on a real clock. Admins approve or reject with an optional note shown back to the farmer.
 
-**Why it matters:** a manual content-moderation checkpoint that stops spam, mispriced, or fraudulent listings from ever reaching buyers.
+**Why it matters:** a manual content-moderation checkpoint that stops spam, mispriced, or fraudulent listings from ever reaching buyers — narrowed to the listings that actually carry that risk, so admin attention isn't spent re-approving routine, in-range listings one by one.
 
 ### Identity verification review
 Reviews every paid verification application — viewing the submitted Ghana Card photo directly — and approves or rejects with notes.
