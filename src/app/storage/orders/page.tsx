@@ -267,7 +267,7 @@ export default function StorageOrdersPage() {
                             <Truck className="h-3.5 w-3.5" />
                             {order.transportRequest.status.replace(/_/g, " ")}
                           </Link>
-                        ) : order.paymentStatus === "PAID" ? (
+                        ) : ["CONFIRMED", "PROCESSING", "READY_FOR_PICKUP"].includes(order.status) ? (
                           <Link
                             href={`/storage/transport?orderId=${order.id}`}
                             className="inline-flex items-center gap-1.5 rounded-full border border-[#1c3a13] px-3 py-1.5 text-xs font-medium text-[#1c3a13] hover:bg-[#eeeee9] transition-colors"

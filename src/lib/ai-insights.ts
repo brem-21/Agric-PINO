@@ -103,7 +103,7 @@ export async function getOrGenerateFarmerLossTips(
     if (cached && !cached.isStale) return cached;
   }
 
-  const [farmer, listings] = await Promise.all([
+  const [farmer, listings, bookings] = await Promise.all([
     prisma.user.findUnique({ where: { id: farmerId }, select: { name: true } }),
     prisma.produceListing.findMany({
       where: { farmerId, ...(opts?.facilityId && { storageFacilityId: opts.facilityId }) },
@@ -115,13 +115,17 @@ export async function getOrGenerateFarmerLossTips(
         expiryDate: true,
         createdAt: true,
         status: true,
-        orders: { select: { quantity: true } },
+        orders: { select: { quantity: true, status: true } },
       },
+    }),
+    prisma.storageBooking.findMany({
+      where: { farmerId, ...(opts?.facilityId && { facilityId: opts.facilityId }) },
+      select: { listingId: true, quantity: true, pricePerUnit: true, status: true, scheduledDropoff: true, createdAt: true },
     }),
   ]);
   if (!farmer) throw new Error("Farmer not found");
 
-  const lossPercentage = computeLossPercentage(listings);
+  const lossPercentage = computeLossPercentage(listings, { bookings });
   const expiredUnsold = listings
     .filter((l) => l.expiryDate && l.expiryDate < new Date() && l.quantity > 0)
     .map((l) => `${l.cropType} (${l.quantity} unsold at expiry)`);

@@ -35,7 +35,7 @@ export async function GET(
     prisma.produceListing.findMany({
       where: { farmerId, storageFacilityId: facility.id },
       orderBy: { createdAt: "desc" },
-      include: { orders: { select: { quantity: true } } },
+      include: { orders: { select: { quantity: true, status: true } } },
     }),
     prisma.storageBooking.findMany({
       where: { farmerId, facilityId: facility.id },
@@ -49,8 +49,8 @@ export async function GET(
     .filter((l) => l.status === "ACTIVE")
     .reduce((sum, l) => sum + l.quantity * l.pricePerUnit, 0);
 
-  const lossPercentageThisMonth = computeLossPercentage(listings, { monthOnly: true });
-  const lossPercentageAllTime = computeLossPercentage(listings);
+  const lossPercentageThisMonth = computeLossPercentage(listings, { monthOnly: true, bookings });
+  const lossPercentageAllTime = computeLossPercentage(listings, { bookings });
 
   return NextResponse.json({
     farmer,

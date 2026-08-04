@@ -71,6 +71,12 @@ export default function MessagesPage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [newMsgBanner, setNewMsgBanner] = useState<string | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  // Distinguishes "no messages exist yet" from "haven't loaded the messages
+  // yet" — messages is deliberately cleared to [] the instant a conversation
+  // is opened (so a leftover thread never flashes under the wrong name),
+  // which otherwise looks identical to a genuinely empty conversation until
+  // the fetch resolves.
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -145,7 +151,11 @@ export default function MessagesPage() {
       }
 
       fetchConversations();
-    } catch { /* network blip */ }
+    } catch {
+      /* network blip */
+    } finally {
+      if (isManual) setMessagesLoading(false);
+    }
   }, [session?.user.id, fetchConversations]);
 
   useEffect(() => {
@@ -190,6 +200,7 @@ export default function MessagesPage() {
     // Clear immediately so a leftover message (or unresolved optimistic temp
     // message) from the previous conversation can never flash under this one.
     setMessages([]);
+    setMessagesLoading(true);
     fetchMessages(activeConv, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConv]);
@@ -435,7 +446,11 @@ export default function MessagesPage() {
             )}
 
             <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 relative">
-              {messages.length === 0 && (
+              {messagesLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="h-6 w-6 animate-spin text-[#1c3a13]/40" />
+                </div>
+              ) : messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-[#1c3a13]/40">
                   <MessageCircle className="h-10 w-10 mb-2 text-[#1c3a13]/20" />
                   <p className="text-sm">Say hello to {activeName}!</p>

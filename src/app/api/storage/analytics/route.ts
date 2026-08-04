@@ -10,7 +10,7 @@ export async function GET() {
   const facility = await prisma.storageFacilityProfile.findUnique({ where: { userId: session.user.id } });
   if (!facility) return NextResponse.json({ error: "Facility profile not found" }, { status: 404 });
 
-  const [commissionAgg, activeListings, bookingCounts, pendingOrders, allListings] = await Promise.all([
+  const [commissionAgg, activeListings, bookingCounts, pendingOrders, allListings, allBookings] = await Promise.all([
     prisma.order.aggregate({
       where: { storageFacilityId: facility.id, paymentStatus: "PAID" },
       _sum: { facilityCommissionAmount: true, totalAmount: true },
@@ -26,7 +26,13 @@ export async function GET() {
     // the farmer dashboard's own post-harvest-loss stat, but facility-wide.
     prisma.produceListing.findMany({
       where: { storageFacilityId: facility.id },
-      select: { quantity: true, pricePerUnit: true, expiryDate: true, createdAt: true, orders: { select: { quantity: true } } },
+      select: { quantity: true, pricePerUnit: true, expiryDate: true, createdAt: true, orders: { select: { quantity: true, status: true } } },
+    }),
+    // Bookings not yet dropped off — a confirmed drop-off that never actually
+    // happened is itself a loss event (see computeLossPercentage).
+    prisma.storageBooking.findMany({
+      where: { facilityId: facility.id },
+      select: { listingId: true, quantity: true, pricePerUnit: true, status: true, scheduledDropoff: true, createdAt: true },
     }),
   ]);
 
@@ -41,7 +47,7 @@ export async function GET() {
       confirmedBookings: countByStatus.CONFIRMED ?? 0,
       inStorageBookings: countByStatus.DROPPED_OFF ?? 0,
       pendingOrders,
-      lossPercentage: computeLossPercentage(allListings),
+      lossPercentage: computeLossPercentage(allListings, { bookings: allBookings }),
     },
   });
 }

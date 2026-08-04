@@ -49,6 +49,10 @@ export default function AdminListingsPage() {
   const [acting, setActing] = useState<Record<string, string>>({});
   const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
   const [rejectOpen, setRejectOpen] = useState<Record<string, boolean>>({});
+  // Requires a second click on a price-flagged listing — the system already
+  // detected an outlier price, so a single accidental/reflexive "Approve"
+  // shouldn't be enough to wave it through.
+  const [approveConfirmOpen, setApproveConfirmOpen] = useState<Record<string, boolean>>({});
   // Snapshotted per-fetch rather than read fresh during render — a stable
   // reference point is enough for an "overdue" badge and keeps render pure.
   const [fetchedAt, setFetchedAt] = useState(0);
@@ -88,6 +92,7 @@ export default function AdminListingsPage() {
           ));
         }
         setRejectOpen((prev) => ({ ...prev, [listingId]: false }));
+        setApproveConfirmOpen((prev) => ({ ...prev, [listingId]: false }));
       }
     } finally {
       setActing((prev) => { const n = { ...prev }; delete n[listingId]; return n; });
@@ -177,15 +182,47 @@ export default function AdminListingsPage() {
                 {/* Actions */}
                 {isPending && (
                   <div className="border-t border-[#eeeee9] px-5 py-3 bg-[#eeeee9] flex flex-wrap items-center gap-3">
-                    <Button
-                      size="sm"
-                      className="rounded-full bg-[#1c3a13] hover:bg-[#2a5219] text-[#fcfcf7]"
-                      disabled={!!acting[listing.id]}
-                      onClick={() => act(listing.id, "APPROVED")}
-                    >
-                      {acting[listing.id] === "APPROVED" ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
-                      Approve
-                    </Button>
+                    {listing.priceFlagged && !approveConfirmOpen[listing.id] ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full border-amber-600 text-amber-700 hover:bg-amber-50"
+                        disabled={!!acting[listing.id]}
+                        onClick={() => setApproveConfirmOpen((prev) => ({ ...prev, [listing.id]: true }))}
+                      >
+                        <Check className="h-3.5 w-3.5 mr-1" />
+                        Approve
+                      </Button>
+                    ) : listing.priceFlagged ? (
+                      <div className="flex-1 flex flex-wrap gap-2 items-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
+                        <p className="text-xs text-amber-800 flex-1 min-w-[200px]">
+                          This listing is priced well outside the normal range for {listing.category} — approve anyway?
+                        </p>
+                        <div className="flex gap-2">
+                          <Button size="sm"
+                            className="rounded-full bg-[#1c3a13] hover:bg-[#2a5219] text-[#fcfcf7]"
+                            disabled={!!acting[listing.id]}
+                            onClick={() => act(listing.id, "APPROVED")}>
+                            {acting[listing.id] === "APPROVED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Yes, Approve Anyway"}
+                          </Button>
+                          <Button size="sm" variant="ghost"
+                            className="rounded-full text-[#1c3a13]/70 hover:text-[#1c3a13] hover:bg-[#fcfcf7]"
+                            onClick={() => setApproveConfirmOpen((prev) => ({ ...prev, [listing.id]: false }))}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="rounded-full bg-[#1c3a13] hover:bg-[#2a5219] text-[#fcfcf7]"
+                        disabled={!!acting[listing.id]}
+                        onClick={() => act(listing.id, "APPROVED")}
+                      >
+                        {acting[listing.id] === "APPROVED" ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
+                        Approve
+                      </Button>
+                    )}
 
                     {!rejectOpen[listing.id] ? (
                       <Button size="sm" variant="outline"

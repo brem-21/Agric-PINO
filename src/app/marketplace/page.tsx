@@ -105,7 +105,9 @@ function ListingCard({
   const emoji = CATEGORY_EMOJI[listing.category] ?? "🌿";
   const catLabel = CATEGORY_LABEL[listing.category] ?? listing.category;
   const farmName = listing.farmer.farmerProfile?.farmName ?? listing.farmer.name;
-  const farmerLocation = listing.farmer.farmerProfile?.location ?? listing.location;
+  // Where THIS produce actually is — not the farmer's registered base
+  // location, which can differ (e.g. harvested/held away from the home farm).
+  const produceLocation = listing.location || listing.farmer.farmerProfile?.location;
   const urgency = getSpoilageUrgency(listing.expiryDate);
 
   return (
@@ -161,7 +163,7 @@ function ListingCard({
 
         <div className="flex items-center gap-1.5 text-sm text-[#1c3a13]/70">
           <MapPin className="h-4 w-4 text-[#1c3a13]/40 flex-shrink-0" />
-          <span className="truncate">{farmerLocation}</span>
+          <span className="truncate">{produceLocation}</span>
         </div>
 
         {listing.storageFacility && (

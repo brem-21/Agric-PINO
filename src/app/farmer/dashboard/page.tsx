@@ -51,6 +51,7 @@ export default async function FarmerDashboardPage() {
     recentOrders,
     recentListings,
     lossListings,
+    lossBookings,
     user,
     latestVerificationRequest,
   ] = await Promise.all([
@@ -82,8 +83,12 @@ export default async function FarmerDashboardPage() {
         pricePerUnit: true,
         expiryDate: true,
         createdAt: true,
-        orders: { select: { quantity: true } },
+        orders: { select: { quantity: true, status: true } },
       },
+    }),
+    prisma.storageBooking.findMany({
+      where: { farmerId },
+      select: { listingId: true, quantity: true, pricePerUnit: true, status: true, scheduledDropoff: true, createdAt: true },
     }),
     prisma.user.findUnique({ where: { id: farmerId }, select: { isVerified: true, verifiedAt: true } }),
     prisma.verificationRequest.findFirst({
@@ -98,7 +103,7 @@ export default async function FarmerDashboardPage() {
   const totalEarnings =
     (paidOrdersAgg._sum.totalAmount ?? 0) - (paidOrdersAgg._sum.facilityCommissionAmount ?? 0);
 
-  const lossPercentage = computeLossPercentage(lossListings);
+  const lossPercentage = computeLossPercentage(lossListings, { bookings: lossBookings });
   const lossColor = lossColorClass(lossPercentage);
 
   // Best-effort — a missing/failing OpenRouter call should never break the dashboard.

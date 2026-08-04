@@ -110,7 +110,9 @@ Choosing "Admin" at registration does **not** grant admin access immediately. It
 ### Dashboard
 At-a-glance stat tiles (active listings, pending orders, completed orders, total earnings from paid orders), a live weather widget, a verification-status banner, a table of recent orders with status and a track-order link, and a grid of the farmer's most recent listings with their moderation status.
 
-**Why it matters:** gives a farmer a single-glance view of their business health without navigating through multiple separate pages.
+A **Post-Harvest Loss** tile is computed fresh on every page load from three independent signals, not just one: produce whose listing has passed its expiry date still unsold, an order that was cancelled after the stock was already pulled from the marketplace (nothing restocks a listing on cancellation, so that value is genuinely gone), and a storage booking the farmer confirmed but never actually dropped off within a few days of the scheduled date — the one intervention built to prevent spoilage, missed. All three are valued in GHS and expressed as a percentage of everything the farmer has ever brought to market, color-coded by severity.
+
+**Why it matters:** gives a farmer a single-glance view of their business health without navigating through multiple separate pages, and a loss figure that actually reflects the real points where produce goes to waste — not just "did this listing expire" — is what makes the number trustworthy enough to act on.
 
 ### Produce listing management
 Farmers create listings with crop type (autocomplete from common Ghanaian crops), category, quantity, unit, price, description, harvest/expiry dates, location, and up to 5 photos (uploaded to Cloudinary). A listing doesn't default into a manual review queue: it **auto-publishes immediately** when the farmer is verified, has no open complaints against them, and the price sits within a normal band of the category's recent median — the farmer sees "It's live on the marketplace now — no waiting" the moment they submit. Only a price that's a statistical outlier, or a farmer with an open complaint, gets routed to manual admin review instead, and that farmer is told exactly why ("It needs a quick admin review"). The listing's own lifecycle status (Active/Draft/Sold/Expired) is tracked separately from its moderation status (Pending/Approved/Rejected either way).
@@ -210,7 +212,7 @@ Once a buyer orders produce that's sitting in the facility, the facility — not
 **Why it matters:** this is what makes storage a genuine "farmer steps back, facility takes over" handoff rather than just a place to park produce — the farmer keeps earning while the facility does the operational work of closing the sale.
 
 ### Facility dashboard: post-harvest loss tracking
-Alongside commission and booking stats, the dashboard surfaces the facility's own **post-harvest loss percentage** — the share of value lost across everything the facility has ever held on farmers' behalf, color-coded by severity — plus a live count of orders still awaiting fulfillment.
+Alongside commission and booking stats, the dashboard surfaces the facility's own **post-harvest loss percentage** — computed the same way as the farmer's own version (expired-unsold stock, cancelled-order value, and bookings confirmed but never actually dropped off), but rolled up across every farmer the facility has ever held produce for — color-coded by severity, plus a live count of orders still awaiting fulfillment. The same figure, scoped per-farmer, ranks the "My Customers" repeat-offender-style table so the facility can see at a glance which of its farmers are losing the most value.
 
 **Why it matters:** gives a facility operator the same "are we actually preventing loss" signal the platform's mission is built around, not just revenue and volume numbers.
 

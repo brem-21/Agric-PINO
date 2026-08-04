@@ -35,23 +35,29 @@ export async function GET() {
 
   const customers = await Promise.all(
     farmers.map(async (farmer) => {
-      const listings = await prisma.produceListing.findMany({
-        where: { farmerId: farmer.id, storageFacilityId: facility.id },
-        select: {
-          status: true,
-          quantity: true,
-          pricePerUnit: true,
-          expiryDate: true,
-          createdAt: true,
-          orders: { select: { quantity: true } },
-        },
-      });
+      const [listings, bookings] = await Promise.all([
+        prisma.produceListing.findMany({
+          where: { farmerId: farmer.id, storageFacilityId: facility.id },
+          select: {
+            status: true,
+            quantity: true,
+            pricePerUnit: true,
+            expiryDate: true,
+            createdAt: true,
+            orders: { select: { quantity: true, status: true } },
+          },
+        }),
+        prisma.storageBooking.findMany({
+          where: { farmerId: farmer.id, facilityId: facility.id },
+          select: { listingId: true, quantity: true, pricePerUnit: true, status: true, scheduledDropoff: true, createdAt: true },
+        }),
+      ]);
 
       const inStockValue = listings
         .filter((l) => l.status === "ACTIVE")
         .reduce((sum, l) => sum + l.quantity * l.pricePerUnit, 0);
 
-      const lossPercentage = computeLossPercentage(listings, { monthOnly: true });
+      const lossPercentage = computeLossPercentage(listings, { monthOnly: true, bookings });
 
       return {
         farmer: {

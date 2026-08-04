@@ -61,12 +61,18 @@ export default async function StorageInventoryPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-medium text-[#1c3a13]">{l.cropType}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[l.status] ?? "bg-[#eeeee9] text-[#1c3a13]"}`}>
+                    <span
+                      title="Physical custody status — whether this produce is still on-site and sellable"
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[l.status] ?? "bg-[#eeeee9] text-[#1c3a13]"}`}
+                    >
                       {l.status}
                     </span>
                     {l.approvalStatus !== "APPROVED" && (
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">
-                        {l.approvalStatus === "PENDING" ? "Pending Approval" : "Rejected"}
+                      <span
+                        title="Marketplace visibility — separate from physical custody above; produce can be in storage while still awaiting admin approval to appear publicly"
+                        className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700"
+                      >
+                        {l.approvalStatus === "PENDING" ? "Awaiting Marketplace Approval" : "Rejected from Marketplace"}
                       </span>
                     )}
                   </div>
