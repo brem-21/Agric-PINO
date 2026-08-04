@@ -13,12 +13,14 @@ import {
   ShoppingCart,
   AlertCircle,
   BadgeCheck,
+  Handshake,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProductImageSlideshow } from "@/components/shared/product-image-slideshow";
 import { FollowButton } from "@/components/shared/follow-button";
 import { QuickMessageDialog } from "@/components/shared/quick-message-dialog";
+import { MakeOfferDialog } from "@/components/shared/make-offer-dialog";
 import { PaymentChoicePanel } from "@/components/shared/payment-choice-panel";
 import { formatCurrency, formatDate, getSpoilageUrgency } from "@/lib/utils";
 
@@ -396,6 +398,8 @@ export function ListingDetailClient({ id }: { id: string }) {
                 <QuickMessageDialog
                   recipientId={listing.farmer.id}
                   recipientName={listing.farmer.name}
+                  listingId={listing.id}
+                  cropName={listing.cropType}
                   trigger={
                     <Button variant="outline" size="sm"
                       className="rounded-full border-[#eeeee9] text-[#1c3a13] hover:bg-[#eeeee9] hover:border-[#1c3a13]">
@@ -406,6 +410,22 @@ export function ListingDetailClient({ id }: { id: string }) {
                     </Button>
                   }
                 />
+                {session?.user.role === "BUYER" && isActive && (
+                  <MakeOfferDialog
+                    listingId={listing.id}
+                    cropType={listing.cropType}
+                    unit={listing.unit}
+                    listedPrice={listing.pricePerUnit}
+                    maxQuantity={listing.quantity}
+                    trigger={
+                      <Button variant="outline" size="sm"
+                        className="rounded-full border-[#eeeee9] text-[#1c3a13] hover:bg-[#eeeee9] hover:border-[#1c3a13]">
+                        <Handshake className="h-3.5 w-3.5 mr-1.5" />
+                        Make an Offer
+                      </Button>
+                    }
+                  />
+                )}
               </div>
             </div>
           </div>

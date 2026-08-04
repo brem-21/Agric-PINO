@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
         status: true,
         approvalStatus: true,
         approvalNotes: true,
+        priceFlagged: true,
         createdAt: true,
         farmer: {
           select: {
@@ -43,7 +44,9 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      // Price-flagged listings surface first within a status — they're the
+      // ones that most need a human's attention, not just the oldest.
+      orderBy: [{ priceFlagged: "desc" }, { createdAt: "desc" }],
       skip: (page - 1) * limit,
       take: limit,
     }),

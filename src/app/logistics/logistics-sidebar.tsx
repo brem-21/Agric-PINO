@@ -14,6 +14,7 @@ import {
   ChevronRight,
   AlertTriangle,
   Dumbbell,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarWithStatus } from "@/components/shared/online-indicator";
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { href: "/logistics/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/logistics/requests", label: "Transport Requests", icon: Truck },
   { href: "/logistics/deliveries", label: "Active Deliveries", icon: PackageCheck },
+  { href: "/logistics/messages", label: "Messages", icon: MessageSquare },
   { href: "/logistics/complaints", label: "Report Incident", icon: AlertTriangle },
 ];
 

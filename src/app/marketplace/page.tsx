@@ -200,6 +200,8 @@ function ListingCard({
         <QuickMessageDialog
           recipientId={listing.farmer.id}
           recipientName={listing.farmer.name}
+          listingId={listing.id}
+          cropName={listing.cropType}
           trigger={
             <Button variant="outline" size="sm" title={`Message ${listing.farmer.name}`}
               className="rounded-full border-[#eeeee9] text-[#1c3a13] hover:bg-[#eeeee9] hover:border-[#1c3a13]">

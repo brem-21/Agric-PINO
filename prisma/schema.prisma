@@ -47,6 +47,8 @@ model User {
   notifications              Notification[]          @relation("NotificationRecipient")
   buyerOrders                Order[]                 @relation("BuyerOrders")
   farmerOrders               Order[]                 @relation("FarmerOrders")
+  buyerOffers                Offer[]                 @relation("BuyerOffers")
+  farmerOffers               Offer[]                 @relation("FarmerOffers")
   listings                   ProduceListing[]
   reviewsGiven               Review[]                @relation("ReviewAuthor")
   reviewsReceived            Review[]                @relation("ReviewTarget")
@@ -138,6 +140,9 @@ model ProduceListing {
   updatedAt         DateTime                @updatedAt
   approvalNotes     String?
   approvalStatus    ApprovalStatus          @default(PENDING)
+  // Set when pricePerUnit deviates sharply from the category's recent median —
+  // surfaces the listing for priority admin review even if it auto-approved.
+  priceFlagged      Boolean                 @default(false)
   // Set only once a storage-facility operator marks the matching StorageBooking
   // DROPPED_OFF — null means the farmer is holding/selling this produce directly,
   // unchanged from the original flow.
@@ -146,6 +151,8 @@ model ProduceListing {
   farmer            User                    @relation(fields: [farmerId], references: [id])
   storageFacility   StorageFacilityProfile? @relation(fields: [storageFacilityId], references: [id])
   storageBookings   StorageBooking[]
+  messages          Message[]
+  offers            Offer[]
 }
 
 model Order {
@@ -174,6 +181,52 @@ model Order {
   storageFacility          StorageFacilityProfile? @relation(fields: [storageFacilityId], references: [id])
   payment                  Payment?
   transportRequest         TransportRequest?
+  offer                    Offer?
+}
+
+enum OfferStatus {
+  PENDING
+  COUNTERED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+enum OfferParty {
+  BUYER
+  FARMER
+}
+
+// A structured, binding negotiation over a listing's price/quantity — each
+// row holds the CURRENT terms on the table; a counter overwrites quantity/
+// price in place rather than appending a new row, so there's always exactly
+// one live offer per buyer-listing pair to accept, counter, or reject.
+model Offer {
+  id           String         @id @default(cuid())
+  listingId    String
+  buyerId      String
+  farmerId     String
+  quantity     Float
+  pricePerUnit Float
+  message      String?
+  status       OfferStatus    @default(PENDING)
+  // Whoever proposed the CURRENT quantity/price — the other party is the only
+  // one who can accept, counter, or reject it (prevents a buyer from
+  // "accepting" their own still-pending offer, and vice versa).
+  lastActionBy OfferParty
+  expiresAt    DateTime
+  orderId      String?        @unique
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  listing      ProduceListing @relation(fields: [listingId], references: [id])
+  buyer        User           @relation("BuyerOffers", fields: [buyerId], references: [id])
+  farmer       User           @relation("FarmerOffers", fields: [farmerId], references: [id])
+  order        Order?         @relation(fields: [orderId], references: [id])
+
+  @@index([listingId])
+  @@index([buyerId])
+  @@index([farmerId])
 }
 
 model Payment {
@@ -240,14 +293,19 @@ model DeliveryLeg {
 }
 
 model Message {
-  id         String   @id @default(cuid())
+  id         String          @id @default(cuid())
   senderId   String
   receiverId String
   content    String
-  read       Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  read       Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+  // Set only when the message was started from a marketplace listing (e.g. the
+  // "Message Farmer" quick-contact dialog) — gives the conversation crop/price
+  // context. Messages sent from the plain messaging inbox leave this null.
+  listingId  String?
+  listing    ProduceListing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  receiver   User            @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender     User            @relation("SentMessages", fields: [senderId], references: [id])
 }
 
 model Review {

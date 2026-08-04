@@ -18,13 +18,21 @@ const deliveryIcon = L.divIcon({
   iconAnchor: [13, 26],
 });
 
+const riderIcon = L.divIcon({
+  html: '<div style="font-size:24px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));">🏍️</div>',
+  className: "",
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+});
+
 interface DeliveryMapInnerProps {
   pickup: { lat: number; lng: number; label: string };
   delivery: { lat: number; lng: number; label: string };
+  rider?: { lat: number; lng: number; label: string } | null;
   height?: number;
 }
 
-export default function DeliveryMapInner({ pickup, delivery, height = 260 }: DeliveryMapInnerProps) {
+export default function DeliveryMapInner({ pickup, delivery, rider, height = 260 }: DeliveryMapInnerProps) {
   const midLat = (pickup.lat + delivery.lat) / 2;
   const midLng = (pickup.lng + delivery.lng) / 2;
 
@@ -49,6 +57,11 @@ export default function DeliveryMapInner({ pickup, delivery, height = 260 }: Del
         <Marker position={[delivery.lat, delivery.lng]} icon={deliveryIcon}>
           <Popup>Delivery: {delivery.label}</Popup>
         </Marker>
+        {rider && (
+          <Marker position={[rider.lat, rider.lng]} icon={riderIcon}>
+            <Popup>{rider.label}</Popup>
+          </Marker>
+        )}
       </MapContainer>
     </div>
   );

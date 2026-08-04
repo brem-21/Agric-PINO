@@ -40,6 +40,7 @@ export default function NewListingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [autoApproved, setAutoApproved] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -147,6 +148,7 @@ export default function NewListingPage() {
         return;
       }
 
+      setAutoApproved(!!data.autoApproved);
       setSuccess(true);
       setTimeout(() => router.push("/farmer/listings"), 1500);
     } catch {
@@ -163,7 +165,12 @@ export default function NewListingPage() {
           <CheckCircle className="h-10 w-10 text-[#1c3a13]" />
         </div>
         <h2 className="text-xl font-light tracking-tight text-[#1c3a13]">Listing created!</h2>
-        <p className="text-[#1c3a13]/50 text-sm">Redirecting to your listings...</p>
+        <p className="text-[#1c3a13]/50 text-sm">
+          {autoApproved
+            ? "It's live on the marketplace now — no waiting."
+            : "It needs a quick admin review before it's visible to buyers."}
+        </p>
+        <p className="text-[#1c3a13]/40 text-xs">Redirecting to your listings...</p>
       </div>
     );
   }

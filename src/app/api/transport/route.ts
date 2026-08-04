@@ -93,6 +93,32 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // A facility requesting delivery on a farmer's behalf — notify the farmer
+    // so every action taken on their produce is visible to them, not silent.
+    if (session.user.role === "STORAGE_FACILITY" && data.orderId) {
+      const order = await prisma.order.findUnique({
+        where: { id: data.orderId },
+        select: { farmerId: true, listing: { select: { cropType: true } } },
+      });
+      const facility = await prisma.storageFacilityProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { name: true },
+      });
+      if (order && facility) {
+        await prisma.notification.create({
+          data: {
+            userId: order.farmerId,
+            actorId: session.user.id,
+            type: "DELIVERY_REQUESTED",
+            title: `${facility.name} requested delivery for your order on your behalf`,
+            body: `${order.listing.cropType} — a rider has been requested to deliver this order.`,
+            link: "/farmer/orders",
+            entityId: data.orderId,
+          },
+        });
+      }
+    }
+
     return NextResponse.json({ request }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -16,6 +16,9 @@ import {
   AlertTriangle,
   Dumbbell,
   Users,
+  ShoppingCart,
+  Truck,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarWithStatus } from "@/components/shared/online-indicator";
@@ -26,7 +29,11 @@ const NAV_ITEMS = [
   { href: "/storage/profile", label: "Facility Profile", icon: Warehouse },
   { href: "/storage/bookings", label: "Bookings", icon: CalendarClock },
   { href: "/storage/inventory", label: "Inventory", icon: Package },
+  { href: "/storage/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/storage/transport", label: "Request Delivery", icon: Truck },
+  { href: "/find-rider", label: "Find Delivery", icon: Truck },
   { href: "/storage/customers", label: "My Customers", icon: Users },
+  { href: "/storage/messages", label: "Messages", icon: MessageSquare },
   { href: "/storage/complaints", label: "Report Incident", icon: AlertTriangle },
 ];
 

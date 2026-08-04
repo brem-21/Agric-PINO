@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Package, User, Leaf, Phone, Route, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { DeliveryMap } from "@/components/shared/delivery-map";
+import { LiveRiderTracker } from "@/components/shared/live-rider-tracker";
 
 const CATEGORY_PLACEHOLDER: Record<string, { emoji: string; bg: string }> = {
   VEGETABLES: { emoji: "🥬", bg: "bg-[#eeeee9]" },
@@ -310,19 +311,35 @@ export default async function TrackingPage({
                 order.transportRequest.deliveryLat &&
                 order.transportRequest.deliveryLong && (
                   <div className="mt-3 pt-3 border-t border-[#eeeee9]">
-                    <DeliveryMap
-                      pickup={{
-                        lat: order.transportRequest.pickupLat,
-                        lng: order.transportRequest.pickupLong,
-                        label: order.transportRequest.pickupLocation,
-                      }}
-                      delivery={{
-                        lat: order.transportRequest.deliveryLat,
-                        lng: order.transportRequest.deliveryLong,
-                        label: order.transportRequest.deliveryLocation,
-                      }}
-                      height={220}
-                    />
+                    {["ASSIGNED", "PICKED_UP", "IN_TRANSIT"].includes(order.transportRequest.status) ? (
+                      <LiveRiderTracker
+                        orderId={orderId}
+                        pickup={{
+                          lat: order.transportRequest.pickupLat,
+                          lng: order.transportRequest.pickupLong,
+                          label: order.transportRequest.pickupLocation,
+                        }}
+                        delivery={{
+                          lat: order.transportRequest.deliveryLat,
+                          lng: order.transportRequest.deliveryLong,
+                          label: order.transportRequest.deliveryLocation,
+                        }}
+                      />
+                    ) : (
+                      <DeliveryMap
+                        pickup={{
+                          lat: order.transportRequest.pickupLat,
+                          lng: order.transportRequest.pickupLong,
+                          label: order.transportRequest.pickupLocation,
+                        }}
+                        delivery={{
+                          lat: order.transportRequest.deliveryLat,
+                          lng: order.transportRequest.deliveryLong,
+                          label: order.transportRequest.deliveryLocation,
+                        }}
+                        height={220}
+                      />
+                    )}
                   </div>
                 )}
             </CardContent>

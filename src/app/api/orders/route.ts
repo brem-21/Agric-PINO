@@ -20,10 +20,22 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
 
   const role = session.user.role;
+  let scope: { farmerId: string } | { buyerId: string } | { storageFacilityId: string };
+  if (role === "FARMER") {
+    scope = { farmerId: session.user.id };
+  } else if (role === "STORAGE_FACILITY") {
+    const facility = await prisma.storageFacilityProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true },
+    });
+    if (!facility) return NextResponse.json({ orders: [] });
+    scope = { storageFacilityId: facility.id };
+  } else {
+    scope = { buyerId: session.user.id };
+  }
+
   const where = {
-    ...(role === "FARMER"
-      ? { farmerId: session.user.id }
-      : { buyerId: session.user.id }),
+    ...scope,
     ...(status && { status: status as never }),
   };
 

@@ -109,6 +109,7 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
 
   // OTP state
+  const [phoneError, setPhoneError] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState("");
@@ -140,6 +141,20 @@ export default function RegisterPage() {
 
   function updateForm(field: keyof FormData, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    if (field === "phone") setPhoneError("");
+  }
+
+  // Ghanaian mobile numbers: 10 digits, starting 0, second digit 2 or 5
+  // (covers MTN/Telecel/AirtelTigo's 02x/05x ranges) — a low-literacy user
+  // benefits from finding out immediately, not after filling the whole form.
+  function validateGhanaPhone(phone: string): string {
+    const digitsOnly = phone.replace(/\s+/g, "");
+    if (!digitsOnly) return "Phone number is required.";
+    if (!/^\d+$/.test(digitsOnly)) return "Phone number should contain digits only.";
+    if (!/^0[25]\d{8}$/.test(digitsOnly)) {
+      return "Enter a valid 10-digit Ghana mobile number, e.g. 0244123456.";
+    }
+    return "";
   }
 
   function handleRoleSelect(selected: Role) {
@@ -174,6 +189,12 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
 
+    const phoneValidationError = validateGhanaPhone(form.phone);
+    if (phoneValidationError) {
+      setPhoneError(phoneValidationError);
+      setError(phoneValidationError);
+      return;
+    }
     if (form.password !== form.confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -457,9 +478,12 @@ export default function RegisterPage() {
                       placeholder="0244123456"
                       value={form.phone}
                       onChange={(e) => updateForm("phone", e.target.value)}
+                      onBlur={(e) => setPhoneError(validateGhanaPhone(e.target.value))}
                       required
-                      className="bg-[#fcfcf7] border border-[#eeeee9] rounded-lg focus:ring-[#1c3a13]"
+                      aria-invalid={!!phoneError}
+                      className={`bg-[#fcfcf7] border rounded-lg focus:ring-[#1c3a13] ${phoneError ? "border-red-400" : "border-[#eeeee9]"}`}
                     />
+                    {phoneError && <p className="text-xs text-red-600 mt-1">{phoneError}</p>}
                   </div>
                 </div>
 

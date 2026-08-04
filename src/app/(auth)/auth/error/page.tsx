@@ -18,7 +18,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   Callback: "Error in the OAuth callback handler route.",
   OAuthAccountNotLinked: "This email is already linked to a different sign-in method.",
   EmailSignin: "The email could not be sent.",
-  CredentialsSignin: "Invalid email or password. Please check your credentials.",
+  CredentialsSignin: "Invalid phone number or password. Please check your credentials.",
   SessionRequired: "You must be signed in to access this page.",
   Default: "An unexpected authentication error occurred.",
 };

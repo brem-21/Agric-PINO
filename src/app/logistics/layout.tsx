@@ -10,13 +10,13 @@ import { SidebarMainContent } from "@/components/shared/sidebar-main-content";
 export default async function LogisticsLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
-  if (!session || session.user.role !== "LOGISTICS") {
+  if (!session || (session.user.role !== "LOGISTICS" && session.user.role !== "ADMIN")) {
     redirect("/auth/login");
   }
 
   return (
     <div className="min-h-screen bg-[#fcfcf7]">
-      <SessionGuard expectedRoles={["LOGISTICS"]} />
+      <SessionGuard expectedRoles={["LOGISTICS", "ADMIN"]} />
       <PresenceTracker isRider={true} />
       <SidebarCollapseProvider>
         <LogisticsSidebar user={{ name: session.user.name ?? "Rider", phone: session.user.phone ?? "", image: session.user.image }} isIncidentTeam={session.user.isIncidentTeam} />

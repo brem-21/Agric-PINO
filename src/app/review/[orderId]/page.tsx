@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { ReviewForm } from "@/components/shared/review-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Leaf } from "lucide-react";
+import { Leaf, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 function NotYetDeliveredCard({ backHref }: { backHref: string }) {
@@ -99,6 +99,10 @@ export default async function ReviewPage({
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
+        <Link href={backHref} className="inline-flex items-center gap-1.5 text-sm text-[#1c3a13]/70 hover:text-[#1c3a13] w-fit">
+          <ArrowLeft className="h-4 w-4" /> Back to Orders
+        </Link>
+
         {items.map((item) => (
           <Card key={item.targetId} className="bg-[#fcfcf7] border border-[#eeeee9] rounded-2xl">
             <CardHeader className="text-center pb-2">

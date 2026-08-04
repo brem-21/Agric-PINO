@@ -8,6 +8,10 @@ config({ path: ".env.local" });
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter } as never);
 
+// Mirrors src/lib/utils.ts's FACILITY_COMMISSION_RATE — duplicated rather than
+// imported since this script runs standalone via tsx, outside Next's alias resolution.
+const FACILITY_COMMISSION_RATE_SEED = 0.05;
+
 async function main() {
   console.log("Seeding database...");
 
@@ -765,6 +769,52 @@ async function main() {
   const buyer2 = await prisma.user.findUniqueOrThrow({ where: { phone: "0244000011" } });
   const yamsListing = await prisma.produceListing.findFirstOrThrow({ where: { farmerId: farmer3.id, cropType: "Yams" } });
   const tomatoesListing = await prisma.produceListing.findFirstOrThrow({ where: { farmerId: farmer1.id, cropType: "Tomatoes" } });
+
+  // ── Orders routed through a storage facility ──────────────────────────────
+  // So Storage 1 (Kwame Darko) has something on /storage/orders demonstrating
+  // the full "facility manages orders on the farmer's behalf" flow.
+  console.log("Seeding orders routed through a storage facility...");
+
+  const storedTomatoListing = await prisma.produceListing.findFirstOrThrow({
+    where: { storageFacilityId: bolgatangaFacility.id, farmerId: farmer2.id, cropType: "Tomatoes" },
+  });
+
+  const facilityOrderCount = await prisma.order.count({ where: { storageFacilityId: bolgatangaFacility.id } });
+  if (facilityOrderCount === 0) {
+    // One fresh order awaiting the facility's confirmation...
+    await prisma.order.create({
+      data: {
+        buyerId: buyer1.id,
+        farmerId: farmer2.id,
+        listingId: storedTomatoListing.id,
+        quantity: 30,
+        totalAmount: 30 * storedTomatoListing.pricePerUnit,
+        status: "PENDING",
+        paymentStatus: "UNPAID",
+        fulfillmentType: "DELIVERY",
+        storageFacilityId: bolgatangaFacility.id,
+        facilityCommissionRate: FACILITY_COMMISSION_RATE_SEED,
+        facilityCommissionAmount: 30 * storedTomatoListing.pricePerUnit * FACILITY_COMMISSION_RATE_SEED,
+      },
+    });
+    // ...and one already paid, ready for the facility to arrange delivery.
+    await prisma.order.create({
+      data: {
+        buyerId: buyer2.id,
+        farmerId: farmer2.id,
+        listingId: storedTomatoListing.id,
+        quantity: 50,
+        totalAmount: 50 * storedTomatoListing.pricePerUnit,
+        status: "CONFIRMED",
+        paymentStatus: "PAID",
+        fulfillmentType: "DELIVERY",
+        storageFacilityId: bolgatangaFacility.id,
+        facilityCommissionRate: FACILITY_COMMISSION_RATE_SEED,
+        facilityCommissionAmount: 50 * storedTomatoListing.pricePerUnit * FACILITY_COMMISSION_RATE_SEED,
+        createdAt: daysAgo(2),
+      },
+    });
+  }
 
   const farmer3DeliveredCount = await prisma.order.count({ where: { farmerId: farmer3.id, status: "DELIVERED" } });
   for (let i = farmer3DeliveredCount; i < 10; i++) {

@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { sendRecommendationSMS } from "@/lib/mnotify";
+import { parseAiJson } from "@/lib/ai-json";
 
 // Built lazily so importing this module (e.g. during `next build` page-data
 // collection) never requires OPENROUTER_API_KEY — only actually calling it does.
@@ -218,10 +219,10 @@ Respond ONLY with valid JSON in this exact shape:
   });
 
   const raw = response.choices[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(raw) as { listingIds?: string[]; message?: string };
+  const parsed = parseAiJson<{ listingIds?: string[]; message?: string }>(raw);
   return {
-    listingIds: parsed.listingIds ?? [],
-    message: parsed.message ?? "",
+    listingIds: parsed?.listingIds ?? [],
+    message: parsed?.message ?? "",
   };
 }
 

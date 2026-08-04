@@ -13,6 +13,9 @@ import {
 interface QuickMessageDialogProps {
   recipientId: string;
   recipientName: string;
+  /** The listing this conversation is about, if opened from a marketplace card — attached to the message for context. Omit for a plain message. */
+  listingId?: string;
+  cropName?: string;
   trigger?: React.ReactNode;
   className?: string;
 }
@@ -20,6 +23,8 @@ interface QuickMessageDialogProps {
 export function QuickMessageDialog({
   recipientId,
   recipientName,
+  listingId,
+  cropName,
   trigger,
   className,
 }: QuickMessageDialogProps) {
@@ -48,7 +53,7 @@ export function QuickMessageDialog({
       const res = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ receiverId: recipientId, content: trimmed }),
+        body: JSON.stringify({ receiverId: recipientId, content: trimmed, listingId }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -101,6 +106,11 @@ export function QuickMessageDialog({
                 <p className="text-xs text-[#1c3a13]/40 mt-0.5">Reply in your messages portal</p>
               </div>
             </div>
+            {cropName && (
+              <p className="text-xs text-[#1c3a13] bg-[#eeeee9] rounded-full px-2.5 py-1 w-fit">
+                🌿 About: {cropName}
+              </p>
+            )}
           </DialogHeader>
 
           {sent ? (

@@ -10,13 +10,13 @@ import { SidebarMainContent } from "@/components/shared/sidebar-main-content";
 export default async function FarmerLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
-  if (!session || session.user.role !== "FARMER") {
+  if (!session || (session.user.role !== "FARMER" && session.user.role !== "ADMIN")) {
     redirect("/auth/login");
   }
 
   return (
     <div className="min-h-screen bg-[#fcfcf7]">
-      <SessionGuard expectedRoles={["FARMER"]} />
+      <SessionGuard expectedRoles={["FARMER", "ADMIN"]} />
       <PresenceTracker isRider={false} />
       <SidebarCollapseProvider>
         <FarmerSidebar user={{ name: session.user.name ?? "Farmer", phone: session.user.phone ?? "", image: session.user.image }} isIncidentTeam={session.user.isIncidentTeam} />

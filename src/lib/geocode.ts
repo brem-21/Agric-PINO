@@ -54,3 +54,45 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string> 
   cache.set(key, result);
   return result;
 }
+
+export interface GeocodeResult {
+  lat: number;
+  lon: number;
+  displayName: string;
+}
+
+const forwardCache = new Map<string, GeocodeResult | null>();
+
+async function fetchCoordinates(query: string): Promise<GeocodeResult | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=gh`,
+      {
+        headers: {
+          "User-Agent": "Lorgric-Admin/1.0 (contact: admin@lorgric.com)",
+          "Accept-Language": "en",
+        },
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const hit = data[0];
+    if (!hit) return null;
+    return { lat: parseFloat(hit.lat), lon: parseFloat(hit.lon), displayName: hit.display_name };
+  } catch {
+    return null;
+  }
+}
+
+// Forward geocoding — turns a free-text address (typed, not picked on a map
+// or from GPS) into coordinates, so a transport request built from plain text
+// still gets a distance/fare estimate instead of silently showing none.
+export async function forwardGeocode(query: string): Promise<GeocodeResult | null> {
+  const key = query.trim().toLowerCase();
+  if (!key) return null;
+  if (forwardCache.has(key)) return forwardCache.get(key)!;
+
+  const result = await enqueue(() => fetchCoordinates(key));
+  forwardCache.set(key, result);
+  return result;
+}

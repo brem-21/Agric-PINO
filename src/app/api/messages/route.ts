@@ -8,6 +8,9 @@ import { notifyParties } from "@/lib/notify";
 const messageSchema = z.object({
   receiverId: z.string(),
   content: z.string().min(1).max(2000),
+  // Set only when the message was started from a marketplace listing (the
+  // quick-contact dialog) — a plain message from the regular inbox omits this.
+  listingId: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -27,6 +30,7 @@ export async function GET(req: NextRequest) {
       },
       include: {
         sender: { select: { name: true } },
+        listing: { select: { id: true, cropType: true, images: true, unit: true, pricePerUnit: true } },
       },
       orderBy: { createdAt: "asc" },
     });
@@ -82,13 +86,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { receiverId, content } = messageSchema.parse(body);
+    const { receiverId, content, listingId } = messageSchema.parse(body);
 
     const encrypted = encryptMessage(content);
 
+    // Only attach the listing if it's real — a stale/bad id from the client
+    // just silently falls back to a plain message rather than failing to send.
+    const listing = listingId
+      ? await prisma.produceListing.findUnique({ where: { id: listingId }, select: { id: true, cropType: true } })
+      : null;
+
     const [message, receiver] = await Promise.all([
       prisma.message.create({
-        data: { senderId: session.user.id, receiverId, content: encrypted },
+        data: { senderId: session.user.id, receiverId, content: encrypted, listingId: listing?.id },
       }),
       prisma.user.findUnique({
         where: { id: receiverId },
@@ -101,9 +111,7 @@ export async function POST(req: NextRequest) {
       FARMER: "/farmer/messages",
       BUYER: "/buyer/messages",
       LOGISTICS: "/logistics/messages",
-      // No dedicated messages inbox for storage facility operators yet — send
-      // them to their dashboard rather than a route that doesn't exist.
-      STORAGE_FACILITY: "/storage/dashboard",
+      STORAGE_FACILITY: "/storage/messages",
       ADMIN: "/admin/messages",
     };
     const messagesLink = receiver ? (roleLinks[receiver.role] ?? "/farmer/messages") : "/farmer/messages";
@@ -124,15 +132,16 @@ export async function POST(req: NextRequest) {
     // in-app + SMS, sent in parallel. The SMS never carries the plaintext
     // (messages are end-to-end encrypted), just a nudge to open the app.
     if (receiver) {
+      const aboutSuffix = listing ? ` about ${listing.cropType}` : "";
       await notifyParties([
         {
           phone: receiver.phone,
-          smsMessage: `Lorgric: You have a new message from ${senderName}. Open the app to read it.`,
+          smsMessage: `Lorgric: You have a new message from ${senderName}${aboutSuffix}. Open the app to read it.`,
           inApp: {
             userId: receiver.id,
             actorId: session.user.id,
             type: "MESSAGE",
-            title: `New message from ${senderName}`,
+            title: `New message from ${senderName}${aboutSuffix}`,
             body: content.slice(0, 80),
             link: messagesLink,
           },
@@ -140,7 +149,7 @@ export async function POST(req: NextRequest) {
       ]);
     }
 
-    return NextResponse.json({ message: { ...message, content } }, { status: 201 });
+    return NextResponse.json({ message: { ...message, content, listing } }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0]?.message ?? error.message }, { status: 400 });

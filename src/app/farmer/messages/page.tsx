@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { formatDate, getInitials } from "@/lib/utils";
-import { Send, MessageCircle, Lock, Edit, Search, Loader2, RefreshCw, Radio, ArrowDown, Bell } from "lucide-react";
+import Link from "next/link";
+import { Send, MessageCircle, Lock, Edit, Search, Loader2, RefreshCw, Radio, ArrowDown, Bell, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -16,6 +17,7 @@ interface Message {
   senderId: string;
   createdAt: string;
   sender: { name: string };
+  listing?: { id: string; cropType: string } | null;
 }
 
 interface Conversation {
@@ -233,6 +235,7 @@ export default function MessagesPage() {
       senderId: session?.user.id ?? "",
       createdAt: new Date().toISOString(),
       sender: { name: session?.user.name ?? "" },
+      listing: null,
     };
     setMessages((prev) => [...prev, tempMsg]);
     setNewMessage("");
@@ -450,6 +453,17 @@ export default function MessagesPage() {
                           : "bg-[#eeeee9] text-[#1c3a13] rounded-bl-sm"
                       }`}
                     >
+                      {msg.listing && (
+                        <Link
+                          href={`/marketplace/${msg.listing.id}`}
+                          className={`mb-1.5 flex items-center gap-1 w-fit rounded-full px-2 py-0.5 text-xs font-medium ${
+                            isMe ? "bg-[#fcfcf7]/20 text-[#fcfcf7]" : "bg-[#fcfcf7] text-[#1c3a13]"
+                          }`}
+                        >
+                          <Leaf className="h-3 w-3" />
+                          About: {msg.listing.cropType}
+                        </Link>
+                      )}
                       <p>{msg.content}</p>
                       <p className={`text-xs mt-1 ${isMe ? "text-[#fcfcf7]/60" : "text-[#1c3a13]/40"}`}>
                         {isTemp ? "Sending…" : formatDate(msg.createdAt)}

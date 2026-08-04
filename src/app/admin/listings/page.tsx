@@ -28,6 +28,7 @@ interface Listing {
   status: string;
   approvalStatus: string;
   approvalNotes: string | null;
+  priceFlagged: boolean;
   createdAt: string;
   farmer: { id: string; name: string; phone: string; farmerProfile: { farmName: string } | null };
 }
@@ -48,6 +49,9 @@ export default function AdminListingsPage() {
   const [acting, setActing] = useState<Record<string, string>>({});
   const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
   const [rejectOpen, setRejectOpen] = useState<Record<string, boolean>>({});
+  // Snapshotted per-fetch rather than read fresh during render — a stable
+  // reference point is enough for an "overdue" badge and keeps render pure.
+  const [fetchedAt, setFetchedAt] = useState(0);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -57,6 +61,7 @@ export default function AdminListingsPage() {
     const data = await res.json();
     setListings(data.data ?? []);
     setPagination(data.pagination ?? { page: 1, total: 0, pages: 1 });
+    setFetchedAt(Date.now());
     setLoading(false);
   }, [tab, page]);
 
@@ -123,6 +128,10 @@ export default function AdminListingsPage() {
             const farmName = listing.farmer.farmerProfile?.farmName ?? listing.farmer.name;
             const emoji = CATEGORY_EMOJI[listing.category] ?? "🌿";
             const isPending = listing.approvalStatus === "PENDING";
+            // Produce spoils in hours, not days — a pending listing older
+            // than 2 hours is a real risk to the farmer's harvest, not just
+            // a queue backlog.
+            const isOverdue = isPending && fetchedAt - new Date(listing.createdAt).getTime() > 2 * 60 * 60 * 1000;
 
             return (
               <div key={listing.id} className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] overflow-hidden">
@@ -141,6 +150,16 @@ export default function AdminListingsPage() {
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${APPROVAL_BADGE[listing.approvalStatus] ?? "bg-[#eeeee9] text-[#1c3a13]"}`}>
                         {listing.approvalStatus}
                       </span>
+                      {listing.priceFlagged && (
+                        <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">
+                          ⚠️ Price anomaly
+                        </span>
+                      )}
+                      {isOverdue && (
+                        <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700">
+                          ⏰ Pending &gt;2h — spoilage risk
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-[#1c3a13] font-bold">{formatCurrency(listing.pricePerUnit)} / {listing.unit}</p>
                     <div className="flex flex-wrap gap-3 text-xs text-[#1c3a13]/50 mt-1.5">

@@ -5,11 +5,12 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  DollarSign, Package, Clock, PackageCheck, Warehouse, ArrowRight,
+  DollarSign, Package, Clock, PackageCheck, Warehouse, ArrowRight, TrendingDown, ShoppingCart,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatPercent } from "@/lib/utils";
 import { VerificationStatusCard } from "@/components/shared/verification-status-card";
 import { AiStorageTipsCard } from "@/components/shared/ai-storage-tips-card";
+import { lossColorClass } from "@/lib/post-harvest-loss";
 
 type VerificationStatus = {
   isVerified: boolean;
@@ -24,6 +25,8 @@ type Analytics = {
   pendingBookings: number;
   confirmedBookings: number;
   inStorageBookings: number;
+  pendingOrders: number;
+  lossPercentage: number | null;
 };
 
 export default function StorageDashboardPage() {
@@ -74,6 +77,14 @@ export default function StorageDashboardPage() {
     { label: "Sales Facilitated", value: formatCurrency(analytics.totalSalesFacilitated), icon: Package, iconBg: "bg-[#eeeee9]" },
     { label: "In Storage", value: analytics.activeListings, icon: PackageCheck, iconBg: "bg-[#eeeee9]" },
     { label: "Pending Bookings", value: analytics.pendingBookings, icon: Clock, iconBg: "bg-[#eeeee9]" },
+    { label: "Orders to Fulfil", value: analytics.pendingOrders, icon: ShoppingCart, iconBg: "bg-[#eeeee9]" },
+    {
+      label: "Post-Harvest Loss",
+      caption: "Share of value lost across everything held on behalf of farmers",
+      value: analytics.lossPercentage === null ? "—" : formatPercent(analytics.lossPercentage),
+      icon: TrendingDown,
+      iconBg: lossColorClass(analytics.lossPercentage),
+    },
   ];
 
   return (
@@ -90,8 +101,8 @@ export default function StorageDashboardPage() {
         <p className="text-[#1c3a13]/50 text-sm mt-1">Your facility earns 5% commission on produce sold while in your care</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(({ label, value, icon: Icon, iconBg }) => (
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        {stats.map(({ label, caption, value, icon: Icon, iconBg }) => (
           <Card key={label} className="bg-[#fcfcf7] border border-[#eeeee9] rounded-2xl">
             <CardContent className="p-4">
               <div className={`inline-flex p-2 rounded-lg ${iconBg} text-[#1c3a13] mb-3`}>
@@ -99,12 +110,16 @@ export default function StorageDashboardPage() {
               </div>
               <p className="text-2xl font-bold text-[#1c3a13]">{value}</p>
               <p className="text-xs text-[#1c3a13]/50 mt-0.5">{label}</p>
+              {caption && <p className="text-xs text-[#1c3a13]/40 mt-1">{caption}</p>}
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="flex gap-3 flex-wrap">
+        <Button asChild variant="outline" className="rounded-full border-[#eeeee9] text-[#1c3a13] hover:bg-[#eeeee9]">
+          <Link href="/storage/orders">View Orders</Link>
+        </Button>
         <Button asChild variant="outline" className="rounded-full border-[#eeeee9] text-[#1c3a13] hover:bg-[#eeeee9]">
           <Link href="/storage/bookings">Review Bookings</Link>
         </Button>

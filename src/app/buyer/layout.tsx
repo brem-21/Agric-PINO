@@ -10,13 +10,13 @@ import { SidebarMainContent } from "@/components/shared/sidebar-main-content";
 export default async function BuyerLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
-  if (!session || session.user.role !== "BUYER") {
+  if (!session || (session.user.role !== "BUYER" && session.user.role !== "ADMIN")) {
     redirect("/auth/login");
   }
 
   return (
     <div className="min-h-screen bg-[#fcfcf7]">
-      <SessionGuard expectedRoles={["BUYER"]} />
+      <SessionGuard expectedRoles={["BUYER", "ADMIN"]} />
       <PresenceTracker isRider={false} />
       <SidebarCollapseProvider>
         <BuyerSidebar user={{ name: session.user.name ?? "Buyer", phone: session.user.phone ?? "", image: session.user.image }} isIncidentTeam={session.user.isIncidentTeam} />

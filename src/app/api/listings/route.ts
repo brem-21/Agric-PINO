@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import type { ProduceCategory, ListingStatus } from "@prisma/client";
+import { checkPriceAnomaly } from "@/lib/listing-moderation";
 
 const listingSchema = z.object({
   cropType: z.string().min(1),
@@ -102,6 +103,31 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = listingSchema.parse(body);
 
+    // Comparable recent prices for the same category, to spot outliers.
+    const comparable = await prisma.produceListing.findMany({
+      where: { category: data.category, approvalStatus: "APPROVED" },
+      select: { pricePerUnit: true },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+    const anomaly = checkPriceAnomaly(data.pricePerUnit, comparable.map((c) => c.pricePerUnit));
+
+    const openComplaints = await prisma.complaint.count({
+      where: { targetUserId: session.user.id, status: { in: ["OPEN", "UNDER_REVIEW"] } },
+    });
+
+    // Verification (required to list at all — checked above) plus a clean
+    // complaint record and a sane price is "low risk enough" to skip the
+    // manual queue; anything else still needs a human, but now the human is
+    // only looking at listings that actually warrant a second look.
+    const autoApprove = !anomaly.flagged && openComplaints === 0;
+
+    const approvalNotes = anomaly.flagged
+      ? `Price flagged: GHS ${data.pricePerUnit}/${data.unit} is ${anomaly.deviationPct!.toFixed(0)}% ${anomaly.deviationPct! > 0 ? "above" : "below"} the ${data.category} median (GHS ${anomaly.median!.toFixed(2)}).`
+      : openComplaints > 0
+        ? `Held for review: farmer has ${openComplaints} open complaint(s) against them.`
+        : "Auto-approved: verified farmer, price within normal range for category.";
+
     const listing = await prisma.produceListing.create({
       data: {
         ...data,
@@ -109,13 +135,21 @@ export async function POST(req: NextRequest) {
         images: data.images ?? [],
         harvestDate: data.harvestDate ? new Date(data.harvestDate) : undefined,
         expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
+        approvalStatus: autoApprove ? "APPROVED" : "PENDING",
+        priceFlagged: anomaly.flagged,
+        approvalNotes,
       },
     });
 
-    // Notify followers + admins
+    // Followers only hear about it once it's actually visible on the
+    // marketplace; admins only hear about it if it still needs their review.
     const [followerIds, adminIds] = await Promise.all([
-      prisma.follow.findMany({ where: { followingId: session.user.id }, select: { followerId: true } }),
-      prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } }),
+      autoApprove
+        ? prisma.follow.findMany({ where: { followingId: session.user.id }, select: { followerId: true } })
+        : Promise.resolve([]),
+      !autoApprove
+        ? prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } })
+        : Promise.resolve([]),
     ]);
 
     const notifRecipients = [
@@ -130,7 +164,9 @@ export async function POST(req: NextRequest) {
           actorId: session.user.id,
           type: "NEW_LISTING",
           title: isAdmin
-            ? `New listing awaiting approval from ${session.user.name ?? "a farmer"}`
+            ? anomaly.flagged
+              ? `⚠️ Price anomaly — listing from ${session.user.name ?? "a farmer"} needs priority review`
+              : `New listing awaiting approval from ${session.user.name ?? "a farmer"}`
             : `New listing from ${session.user.name ?? "a farmer"}`,
           body: `${listing.cropType} — ${listing.quantity} ${listing.unit} at GHS ${listing.pricePerUnit}/${listing.unit}`,
           link: isAdmin ? `/admin/listings` : `/marketplace/${listing.id}`,
@@ -139,7 +175,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ listing }, { status: 201 });
+    return NextResponse.json({ listing, autoApproved: autoApprove }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0]?.message ?? error.message }, { status: 400 });

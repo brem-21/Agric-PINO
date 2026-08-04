@@ -71,7 +71,7 @@ This document walks through every feature currently in the product, organized by
 | **Logistics Provider** | Independent delivery riders | Accept and fulfill transport jobs, relay deliveries, earn per job |
 | **Admin** | Platform operators | Moderate listings and storage facilities, review verifications, resolve disputes, monitor analytics |
 
-Every route in the app is protected twice — once at the network edge (before any page even renders) and again inside each page's own data-loading logic — so a Buyer cannot load a Farmer's dashboard, and vice versa, simply by guessing a URL. Anyone who fails a role check lands on a clear "Access Denied" screen with options to go back, go home, or sign in as someone else.
+Every route in the app is protected twice — once at the network edge (before any page even renders) and again inside each page's own data-loading logic — so a Buyer cannot load a Farmer's dashboard, and vice versa, simply by guessing a URL. Anyone who fails a role check lands on a clear "Access Denied" screen with options to go back, go home, or sign in as someone else. Admins are the one exception by design: every role-specific portal (Farmer, Buyer, Logistics, Storage Facility) also accepts the `ADMIN` role, so an admin can open any dashboard directly to investigate or assist, without needing a separate impersonation feature.
 
 ---
 
@@ -192,6 +192,19 @@ Every listing currently linked to the facility, with status, moderation state, q
 
 **Why it matters:** lets an operator sanity-check they're not overcommitting physical space before confirming another booking.
 
+### Managing orders and delivery on the farmer's behalf
+Once a buyer orders produce that's sitting in the facility, the facility — not the farmer — drives that order through its fulfillment lifecycle (Confirm → Start Processing → Mark Ready for Pickup, or mark it delivered directly), and can book a rider for it through the same on-demand transport marketplace every other role uses. Every action the facility takes on an order or its delivery notifies the farmer directly, so nothing happens to their produce silently.
+
+**Why it matters:** this is what makes storage a genuine "farmer steps back, facility takes over" handoff rather than just a place to park produce — the farmer keeps earning while the facility does the operational work of closing the sale.
+
+### Facility dashboard: post-harvest loss tracking
+Alongside commission and booking stats, the dashboard surfaces the facility's own **post-harvest loss percentage** — the share of value lost across everything the facility has ever held on farmers' behalf, color-coded by severity — plus a live count of orders still awaiting fulfillment.
+
+**Why it matters:** gives a facility operator the same "are we actually preventing loss" signal the platform's mission is built around, not just revenue and volume numbers.
+
+### Facility messaging
+A dedicated messages inbox, identical to every other role's, so a facility can be contacted (and reply) directly instead of routing every question through its dashboard.
+
 ### Facility complaints
 The same structured incident-report form available to every role.
 
@@ -279,12 +292,14 @@ The most detailed admin screen: date-range and location/role/device filters, key
 These work identically across every role.
 
 ### Encrypted in-app messaging
-Direct conversations between any two users — a conversation list with unread badges, live search-to-start-conversation, near-real-time polling, optimistic sending, and browser desktop notifications when the tab isn't in focus. Every message is encrypted (AES-256-GCM) before being stored and only decrypted for the authorized participants reading it.
+Direct conversations between any two users — a conversation list with unread badges, live search-to-start-conversation, near-real-time polling, optimistic sending, and browser desktop notifications when the tab isn't in focus. Every message is encrypted (AES-256-GCM) before being stored and only decrypted for the authorized participants reading it. Every role — including Storage Facilities and Logistics Providers — has its own dedicated inbox.
 
-**Why it matters:** lets any two users negotiate and coordinate — price, pickup timing — directly on the platform, and encrypting messages at rest means a database breach doesn't expose those conversations.
+Messages started from a marketplace listing (the "Message Farmer" quick-contact button on a listing card or detail page) carry that listing's crop along with them, shown as a small tappable "About: [Crop]" badge in the conversation that links straight back to the listing.
+
+**Why it matters:** lets any two users negotiate and coordinate — price, pickup timing — directly on the platform, and encrypting messages at rest means a database breach doesn't expose those conversations. The listing context turns "which of my 6 conversations with this buyer was about the tomatoes?" into something the UI just answers for you.
 
 ### Unified notifications
-A single engine fans every platform event (new message, order confirmed, payment chosen, delivery handed off, etc.) out to both an in-app bell notification and an SMS, de-duplicated so nobody is pinged twice for the same event, with rapid repeat messages collapsed into one notification instead of spamming.
+A single engine fans out dozens of distinct platform event types — new messages, order and delivery status changes, storage bookings, complaints and repeat-offender flags, verification and admin/Incident Team application outcomes, review requests, and more — to both an in-app bell notification (each with its own icon) and an SMS, de-duplicated so nobody is pinged twice for the same event, with rapid repeat messages collapsed into one notification instead of spamming.
 
 **Why it matters:** keeps users informed by SMS even when they're not actively in the app — important where connectivity or data is inconsistent — while still maintaining a proper in-app history.
 

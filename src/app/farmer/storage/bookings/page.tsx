@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Loader2, Calendar, Package, MapPin, XCircle } from "lucide-react";
+import { Loader2, Calendar, Package, MapPin, XCircle, ArrowLeft } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 
 interface Booking {
@@ -55,6 +55,9 @@ export default function FarmerStorageBookingsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      <Link href="/farmer/storage" className="inline-flex items-center gap-1.5 text-sm text-[#1c3a13]/70 hover:text-[#1c3a13] w-fit">
+        <ArrowLeft className="h-4 w-4" /> Back to Storage Facilities
+      </Link>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-light tracking-tight text-[#1c3a13]">My Storage Bookings</h1>

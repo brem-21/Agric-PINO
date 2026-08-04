@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { computeLossPercentage } from "@/lib/post-harvest-loss";
+import { parseAiJson } from "@/lib/ai-json";
 
 // Built lazily so importing this module (e.g. during `next build` page-data
 // collection) never requires OPENROUTER_API_KEY — only actually calling it does.
@@ -215,42 +216,54 @@ export async function getOrGenerateFacilityRecommendation(
     capacityTonnes: f.capacityTonnes,
   }));
 
-  const completion = await getClient().chat.completions.create({
-    model: "anthropic/claude-haiku-4-5",
-    max_tokens: 300,
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a storage-matching advisor for smallholder farmers in Northern Ghana. Recommend the single best storage facility for a farmer from a list of candidates, weighing whether the facility accepts the farmer's specific crop types (or all crop types), its equipment/description, and location. Respond ONLY with valid JSON in this exact shape: {\"facilityId\": \"...\", \"reason\": \"2-3 sentence explanation\"}. If none of the candidates are a good fit, set facilityId to null and explain why in reason.",
-      },
-      {
-        role: "user",
-        content: `Farmer: ${farmer.name}, located in ${farmer.farmerProfile?.location ?? ([farmer.district, farmer.region].filter(Boolean).join(", ") || "Northern Ghana")}.
+  let parsed: { facilityId?: string | null; reason?: string } | null = null;
+  try {
+    const completion = await getClient().chat.completions.create({
+      model: "anthropic/claude-haiku-4-5",
+      max_tokens: 300,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a storage-matching advisor for smallholder farmers in Northern Ghana. Recommend the single best storage facility for a farmer from a list of candidates, weighing whether the facility accepts the farmer's specific crop types (or all crop types), its equipment/description, and location. Respond ONLY with valid JSON in this exact shape: {\"facilityId\": \"...\", \"reason\": \"2-3 sentence explanation\"}. If none of the candidates are a good fit, set facilityId to null and explain why in reason.",
+        },
+        {
+          role: "user",
+          content: `Farmer: ${farmer.name}, located in ${farmer.farmerProfile?.location ?? ([farmer.district, farmer.region].filter(Boolean).join(", ") || "Northern Ghana")}.
 Crops currently grown: ${cropMix.join(", ") || "none listed yet"} (categories: ${categoryMix.join(", ") || "unknown"}).
 
 Candidate storage facilities:
 ${JSON.stringify(facilitiesSummary, null, 2)}
 
 Recommend the best facility for this farmer.`,
-      },
-    ],
-  });
-
-  const raw = completion.choices[0]?.message?.content ?? "{}";
-  let parsed: { facilityId?: string | null; reason?: string };
-  try {
-    parsed = JSON.parse(raw);
+        },
+      ],
+    });
+    const raw = completion.choices[0]?.message?.content ?? "";
+    parsed = parseAiJson(raw);
   } catch {
-    parsed = {};
+    parsed = null;
   }
 
-  const matched = facilities.find((f) => f.id === parsed.facilityId) ?? null;
+  // A failed call or unparseable response is transient — don't cache it, or
+  // the widget looks permanently broken for a full day instead of just
+  // retrying (via the "Refresh" button, or the next natural page load once
+  // the cache would otherwise still be "fresh").
+  if (!parsed) {
+    return {
+      facilityId: null,
+      facilityName: null,
+      reason: "Couldn't generate a recommendation just now — tap refresh to try again.",
+      generatedAt: new Date(),
+    };
+  }
+
+  const matched = facilities.find((f) => f.id === parsed!.facilityId) ?? null;
   const result = {
     facilityId: matched?.id ?? null,
     facilityName: matched?.name ?? null,
-    reason: parsed.reason ?? "Unable to generate a recommendation right now.",
+    reason: parsed.reason ?? "No specific match found among the available facilities.",
   };
 
   await writeCache("FACILITY_RECOMMENDATION", farmerId, JSON.stringify(result));

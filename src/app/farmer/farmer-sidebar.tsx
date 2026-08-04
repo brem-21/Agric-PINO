@@ -17,6 +17,7 @@ import {
   Warehouse,
   AlertTriangle,
   Dumbbell,
+  Handshake,
 } from "lucide-react";
 import { SignOutButton } from "@/components/shared/signout-button";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { href: "/farmer/listings", label: "My Listings", icon: List },
   { href: "/farmer/listings/new", label: "New Listing", icon: PlusCircle },
   { href: "/farmer/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/farmer/offers", label: "Offers", icon: Handshake },
   { href: "/farmer/transport", label: "Transport", icon: Truck },
   { href: "/find-rider", label: "Find Delivery", icon: Truck },
   { href: "/farmer/storage", label: "Storage Facilities", icon: Warehouse },

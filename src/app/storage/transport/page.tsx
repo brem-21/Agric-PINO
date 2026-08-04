@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { LocationPicker } from "@/components/shared/location-picker";
 import {
   Truck,
@@ -52,7 +51,7 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: "bg-red-100 text-red-800",
 };
 
-function TransportContent() {
+function StorageTransportContent() {
   const params = useSearchParams();
   const router = useRouter();
   const orderIdParam = params.get("orderId");
@@ -63,12 +62,10 @@ function TransportContent() {
   const [showForm, setShowForm] = useState(false);
   const [linkedOrder, setLinkedOrder] = useState<{ id: string; buyerName: string } | null>(null);
 
-  // Request list
   const [requests, setRequests] = useState<TransportReqItem[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
 
-  // Form fields
   const [form, setForm] = useState({
     pickupLocation: "",
     deliveryLocation: "",
@@ -105,7 +102,6 @@ function TransportContent() {
     }
   }, []);
 
-  // Pricing
   const [customPrice, setCustomPrice] = useState(false);
   const [offerPrice, setOfferPrice] = useState("");
 
@@ -133,20 +129,24 @@ function TransportContent() {
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
   // Without this, a rider accepting/updating a job only ever shows up here
-  // after the farmer manually hits refresh — a real risk when coordinating
-  // pickup of produce that's already spoiling.
+  // after manually hitting refresh — a real risk when coordinating pickup of
+  // produce that's already spoiling.
   useEffect(() => {
     const id = setInterval(fetchRequests, 15_000);
     return () => clearInterval(id);
   }, [fetchRequests]);
 
-  // Prefill pickup/delivery/notes from a specific order when arriving via "Assign Delivery"
+  // Prefill pickup (this facility's own location — the produce is physically
+  // here, not at the farmer's farm) + delivery/notes from the order's buyer.
   useEffect(() => {
     if (!orderIdParam) return;
-    fetch(`/api/orders/${orderIdParam}`)
-      .then((r) => r.json())
-      .then((d) => {
-        const order = d.order;
+    Promise.all([
+      fetch(`/api/orders/${orderIdParam}`).then((r) => r.json()),
+      fetch("/api/storage/profile").then((r) => r.json()),
+    ])
+      .then(([orderData, profileData]) => {
+        const order = orderData.order;
+        const facility = profileData.facility;
         if (!order) return;
         const buyerLocation =
           order.buyer.residenceLocation ||
@@ -155,15 +155,18 @@ function TransportContent() {
 
         setForm((f) => ({
           ...f,
-          pickupLocation: order.listing.location ?? f.pickupLocation,
+          pickupLocation: facility?.location ?? order.listing.location ?? f.pickupLocation,
           deliveryLocation: buyerLocation,
-          notes: `${order.listing.cropType} for ${order.buyer.name} (${order.buyer.phone})`,
+          notes: `${order.listing.cropType} for ${order.buyer.name} (${order.buyer.phone}) — held at our facility`,
         }));
-        if (order.listing.latitude && order.listing.longitude) {
+        if (facility?.latitude && facility?.longitude) {
+          setPickupLat(facility.latitude);
+          setPickupLng(facility.longitude);
+        } else if (order.listing.latitude && order.listing.longitude) {
           setPickupLat(order.listing.latitude);
           setPickupLng(order.listing.longitude);
-        } else if (order.listing.location) {
-          geocodeAddress("pickup", order.listing.location);
+        } else {
+          geocodeAddress("pickup", facility?.location ?? order.listing.location ?? "");
         }
         if (order.buyer.latitude && order.buyer.longitude) {
           setDeliveryLat(order.buyer.latitude);
@@ -261,7 +264,7 @@ function TransportContent() {
       resetForm();
       setShowForm(false);
       if (orderIdParam) {
-        router.push("/farmer/orders");
+        router.push("/storage/orders");
       } else {
         setSuccess(true);
         fetchRequests();
@@ -294,11 +297,12 @@ function TransportContent() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-light tracking-tight text-[#1c3a13]">Transport Requests</h1>
-          <p className="text-[#1c3a13]/50 text-sm mt-1">Request transport for your produce</p>
+          <h1 className="text-2xl font-light tracking-tight text-[#1c3a13]">Request Delivery</h1>
+          <p className="text-[#1c3a13]/50 text-sm mt-1">
+            Don&apos;t have your own transport? Request a nearby rider — the farmer is notified at every step.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={fetchRequests} title="Refresh" className="rounded-full text-[#1c3a13] hover:bg-[#eeeee9]">
@@ -325,12 +329,11 @@ function TransportContent() {
         </div>
       )}
 
-      {/* New Request Form */}
       {showForm && (
         <Card className="bg-[#fcfcf7] border border-[#eeeee9] rounded-2xl">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-[#1c3a13]">New Transport Request</CardTitle>
-            <CardDescription className="text-[#1c3a13]/50">Set pickup and delivery locations for your produce</CardDescription>
+            <CardDescription className="text-[#1c3a13]/50">Set pickup and delivery locations for this order</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -341,12 +344,11 @@ function TransportContent() {
                 </div>
               )}
 
-              {/* Pickup Location */}
               <div className="space-y-2">
                 <Label htmlFor="pickup" className="text-[#1c3a13]">Pickup Location *</Label>
                 <Input
                   id="pickup"
-                  placeholder="e.g. Tamale Central Market"
+                  placeholder="e.g. Your facility's address"
                   value={form.pickupLocation}
                   onChange={(e) => setForm((f) => ({ ...f, pickupLocation: e.target.value }))}
                   onBlur={(e) => { if (!pickupLat) geocodeAddress("pickup", e.target.value); }}
@@ -380,7 +382,6 @@ function TransportContent() {
                 )}
               </div>
 
-              {/* Delivery Location */}
               <div className="space-y-2">
                 <Label htmlFor="delivery" className="text-[#1c3a13]">Delivery Location *</Label>
                 <Input
@@ -419,7 +420,6 @@ function TransportContent() {
                 )}
               </div>
 
-              {/* Weight + Date */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="weight" className="text-[#1c3a13]">Produce Weight (kg) *</Label>
@@ -447,7 +447,6 @@ function TransportContent() {
                 </div>
               </div>
 
-              {/* Fare estimate */}
               {fareEstimate && (
                 <div className="rounded-2xl border border-[#eeeee9] bg-[#fcfcf7] p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -493,7 +492,6 @@ function TransportContent() {
                 </div>
               )}
 
-              {/* Notes */}
               <div className="space-y-1.5">
                 <Label htmlFor="notes" className="text-[#1c3a13]">Notes (optional)</Label>
                 <Input
@@ -518,7 +516,6 @@ function TransportContent() {
         </Card>
       )}
 
-      {/* Existing requests */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-medium text-[#1c3a13]">My Requests</h2>
@@ -544,7 +541,6 @@ function TransportContent() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0 space-y-2">
-                      {/* Title row */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-[#1c3a13]">
                           {req.order?.listing.cropType ?? "General Transport"}
@@ -554,7 +550,6 @@ function TransportContent() {
                         </span>
                       </div>
 
-                      {/* Locations */}
                       <div className="flex items-start gap-2 text-sm text-[#1c3a13]/70">
                         <MapPin className="h-3.5 w-3.5 text-[#1c3a13]/40 mt-0.5 flex-shrink-0" />
                         <span className="truncate">{req.pickupLocation}</span>
@@ -563,7 +558,6 @@ function TransportContent() {
                         <span className="truncate">{req.deliveryLocation}</span>
                       </div>
 
-                      {/* Meta row */}
                       <div className="flex items-center gap-4 text-xs text-[#1c3a13]/50 flex-wrap">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
@@ -599,7 +593,6 @@ function TransportContent() {
                       )}
                     </div>
 
-                    {/* Cancel button */}
                     {req.status === "PENDING" && (
                       <button
                         onClick={() => cancelRequest(req.id)}
@@ -625,10 +618,10 @@ function TransportContent() {
   );
 }
 
-export default function FarmerTransportPage() {
+export default function StorageTransportPage() {
   return (
     <Suspense fallback={<div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-[#1c3a13]/40" /></div>}>
-      <TransportContent />
+      <StorageTransportContent />
     </Suspense>
   );
 }

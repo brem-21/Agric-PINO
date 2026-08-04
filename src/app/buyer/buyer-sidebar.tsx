@@ -15,6 +15,7 @@ import {
   Truck,
   AlertTriangle,
   Dumbbell,
+  Handshake,
 } from "lucide-react";
 import { SignOutButton } from "@/components/shared/signout-button";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { href: "/buyer/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
   { href: "/buyer/orders", label: "My Orders", icon: ShoppingCart },
+  { href: "/buyer/offers", label: "My Offers", icon: Handshake },
   { href: "/find-rider", label: "Find Delivery", icon: Truck },
   { href: "/buyer/messages", label: "Messages", icon: MessageSquare },
   { href: "/buyer/complaints", label: "Report Incident", icon: AlertTriangle },

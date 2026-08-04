@@ -11,6 +11,7 @@ import {
   HandCoins,
   ShieldCheck,
   Handshake,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -87,6 +88,11 @@ export default async function AboutPage() {
       <main>
         {/* Hero */}
         <section className="bg-[#1c3a13] py-20 px-4">
+          <div className="max-w-3xl mx-auto mb-6">
+            <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-[#fcfcf7]/60 hover:text-[#fcfcf7]">
+              <ArrowLeft className="h-4 w-4" /> Back to Home
+            </Link>
+          </div>
           <ScrollReveal className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 border border-[#fcfcf7]/20 rounded-full px-4 py-1.5 text-sm text-[#fcfcf7]/70 mb-8">
               <MapPin className="h-4 w-4" />

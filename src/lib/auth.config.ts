@@ -26,7 +26,7 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!auth?.user;
       const { pathname } = nextUrl;
 
-      const publicRoutes = ["/", "/auth/login", "/auth/register", "/login", "/register", "/marketplace", "/tracking", "/review", "/unauthorized"];
+      const publicRoutes = ["/", "/auth/login", "/auth/register", "/marketplace", "/tracking", "/review", "/unauthorized"];
       const isPublic = publicRoutes.some(
         (r) => pathname === r || pathname.startsWith(`${r}/`)
       );
@@ -40,7 +40,9 @@ export const authConfig: NextAuthConfig = {
       if (pathname.startsWith("/farmer") && role !== "FARMER" && role !== "ADMIN") return false;
       if (pathname.startsWith("/buyer") && role !== "BUYER" && role !== "ADMIN") return false;
       if (pathname.startsWith("/logistics") && role !== "LOGISTICS" && role !== "ADMIN") return false;
-      if (pathname.startsWith("/admin") && role !== "ADMIN") return false;
+      // /admin/pending is reachable by any authenticated role — it's where a BUYER
+      // who applied for admin checks their application status.
+      if (pathname.startsWith("/admin") && pathname !== "/admin/pending" && role !== "ADMIN") return false;
       if (pathname.startsWith("/storage") && role !== "STORAGE_FACILITY" && role !== "ADMIN") return false;
       if (pathname.startsWith("/incident-team") && pathname !== "/incident-team/apply" && role !== "ADMIN" && !isIncidentTeam) return false;
 
