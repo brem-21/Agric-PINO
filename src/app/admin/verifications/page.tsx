@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Check, X, ChevronLeft, ChevronRight, Loader2, TrendingUp } from "lucide-react";
+import { Check, X, ChevronLeft, ChevronRight, ChevronDown, Loader2, TrendingUp, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 
@@ -27,6 +27,15 @@ interface EligibleRow {
   phone: string;
   role: string;
   completedCount: number;
+  verificationInvitedAt: string | null;
+}
+
+interface TransactionRow {
+  id: string;
+  label: string;
+  detail: string;
+  amount: number | null;
+  date: string;
 }
 
 interface Pagination { page: number; total: number; pages: number }
@@ -49,6 +58,11 @@ export default function AdminVerificationsPage() {
   const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
   const [rejectOpen, setRejectOpen] = useState<Record<string, boolean>>({});
   const [lightbox, setLightbox] = useState<string | null>(null);
+
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [transactionsById, setTransactionsById] = useState<Record<string, TransactionRow[]>>({});
+  const [txLoading, setTxLoading] = useState<Record<string, boolean>>({});
+  const [inviting, setInviting] = useState<Record<string, boolean>>({});
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -91,6 +105,40 @@ export default function AdminVerificationsPage() {
     }
   }
 
+  async function toggleExpand(userId: string) {
+    const willExpand = !expanded[userId];
+    setExpanded((prev) => ({ ...prev, [userId]: willExpand }));
+    if (willExpand && !transactionsById[userId]) {
+      setTxLoading((prev) => ({ ...prev, [userId]: true }));
+      try {
+        const res = await fetch(`/api/admin/verifications/eligible-transactions?userId=${userId}`);
+        const data = await res.json();
+        setTransactionsById((prev) => ({ ...prev, [userId]: data.data ?? [] }));
+      } finally {
+        setTxLoading((prev) => ({ ...prev, [userId]: false }));
+      }
+    }
+  }
+
+  async function sendInvite(userId: string) {
+    setInviting((prev) => ({ ...prev, [userId]: true }));
+    try {
+      const res = await fetch("/api/admin/verifications/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error ?? "Failed to send invite");
+        return;
+      }
+      setEligibleRows((prev) => prev.map((u) => (u.id === userId ? { ...u, verificationInvitedAt: data.invitedAt } : u)));
+    } finally {
+      setInviting((prev) => { const n = { ...prev }; delete n[userId]; return n; });
+    }
+  }
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div>
@@ -125,18 +173,59 @@ export default function AdminVerificationsPage() {
               These users are eligible to apply for verification but haven&apos;t yet — worth a proactive nudge.
             </p>
             {eligibleRows.map((u) => (
-              <div key={u.id} className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] p-4 flex items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-[#1c3a13]">{u.name}</p>
-                    <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-[#eeeee9] text-[#1c3a13]">{u.role}</span>
+              <div key={u.id} className="bg-[#fcfcf7] rounded-2xl border border-[#eeeee9] overflow-hidden">
+                <div className="p-4 flex items-center justify-between gap-3 flex-wrap">
+                  <button onClick={() => toggleExpand(u.id)} className="flex items-center gap-3 text-left flex-1 min-w-[200px]">
+                    <ChevronDown className={`h-4 w-4 text-[#1c3a13]/40 flex-shrink-0 transition-transform ${expanded[u.id] ? "rotate-180" : ""}`} />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-[#1c3a13]">{u.name}</p>
+                        <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-[#eeeee9] text-[#1c3a13]">{u.role}</span>
+                      </div>
+                      <p className="text-sm text-[#1c3a13]/50">{u.phone}</p>
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-[#1c3a13]">
+                      <TrendingUp className="h-4 w-4" />
+                      {u.completedCount} completed
+                    </div>
+                    <Button size="sm" variant={u.verificationInvitedAt ? "outline" : "default"}
+                      disabled={!!inviting[u.id]}
+                      onClick={() => sendInvite(u.id)}
+                      className={u.verificationInvitedAt
+                        ? "rounded-full border-[#eeeee9] text-[#1c3a13]"
+                        : "rounded-full bg-[#1c3a13] hover:bg-[#2a5219] text-[#fcfcf7]"}>
+                      {inviting[u.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+                      {u.verificationInvitedAt ? "Resend Invite" : "Send Verification Request"}
+                    </Button>
                   </div>
-                  <p className="text-sm text-[#1c3a13]/50">{u.phone}</p>
                 </div>
-                <div className="flex items-center gap-1.5 text-sm font-medium text-[#1c3a13]">
-                  <TrendingUp className="h-4 w-4" />
-                  {u.completedCount} completed
-                </div>
+                {u.verificationInvitedAt && (
+                  <p className="px-4 pb-2 -mt-2 text-xs text-[#1c3a13]/40">Invited {formatDate(u.verificationInvitedAt)}</p>
+                )}
+
+                {expanded[u.id] && (
+                  <div className="border-t border-[#eeeee9] bg-[#eeeee9] px-4 py-3">
+                    {txLoading[u.id] ? (
+                      <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-[#1c3a13]/40" /></div>
+                    ) : (transactionsById[u.id]?.length ?? 0) === 0 ? (
+                      <p className="text-xs text-[#1c3a13]/50 py-2">No completed transactions found.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {transactionsById[u.id].map((t) => (
+                          <div key={t.id} className="flex items-center justify-between gap-3 text-xs bg-[#fcfcf7] rounded-lg px-3 py-2">
+                            <div className="min-w-0">
+                              <p className="font-medium text-[#1c3a13] truncate">{t.label}</p>
+                              <p className="text-[#1c3a13]/50 truncate">{t.detail} · {formatDate(t.date)}</p>
+                            </div>
+                            {t.amount != null && <span className="font-medium text-[#1c3a13] flex-shrink-0">GHS {t.amount.toFixed(2)}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

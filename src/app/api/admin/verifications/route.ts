@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     // no non-rejected request yet — computed live, no stored/flagged column.
     const unverifiedUsers = await prisma.user.findMany({
       where: { role: { in: [...VERIFICATION_APPLICABLE_ROLES] }, isVerified: false },
-      select: { id: true, name: true, phone: true, role: true, createdAt: true },
+      select: { id: true, name: true, phone: true, role: true, createdAt: true, verificationInvitedAt: true },
     });
 
     const existingRequests = await prisma.verificationRequest.findMany({

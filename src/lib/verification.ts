@@ -57,3 +57,114 @@ export async function getCompletedTransactionCount(userId: string, role: string)
       return 0;
   }
 }
+
+export interface CompletedTransactionRow {
+  id: string;
+  label: string;
+  detail: string;
+  amount: number | null;
+  date: Date;
+}
+
+/**
+ * Display-ready detail behind getCompletedTransactionCount's number — the
+ * actual orders/transactions an admin can check before inviting an eligible
+ * user to apply for free verification.
+ */
+export async function getCompletedTransactionsList(
+  userId: string,
+  role: string,
+  limit = 25
+): Promise<CompletedTransactionRow[]> {
+  switch (role) {
+    case "FARMER": {
+      const orders = await prisma.order.findMany({
+        where: { farmerId: userId, status: "DELIVERED" },
+        select: {
+          id: true,
+          quantity: true,
+          totalAmount: true,
+          updatedAt: true,
+          buyer: { select: { name: true } },
+          listing: { select: { cropType: true } },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: limit,
+      });
+      return orders.map((o) => ({
+        id: o.id,
+        label: o.listing.cropType,
+        detail: `Sold to ${o.buyer.name} · ${o.quantity} units`,
+        amount: o.totalAmount,
+        date: o.updatedAt,
+      }));
+    }
+    case "BUYER": {
+      const orders = await prisma.order.findMany({
+        where: { buyerId: userId, status: "DELIVERED" },
+        select: {
+          id: true,
+          quantity: true,
+          totalAmount: true,
+          updatedAt: true,
+          farmer: { select: { name: true } },
+          listing: { select: { cropType: true } },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: limit,
+      });
+      return orders.map((o) => ({
+        id: o.id,
+        label: o.listing.cropType,
+        detail: `Bought from ${o.farmer.name} · ${o.quantity} units`,
+        amount: o.totalAmount,
+        date: o.updatedAt,
+      }));
+    }
+    case "LOGISTICS": {
+      const profile = await prisma.logisticsProfile.findUnique({ where: { userId }, select: { id: true } });
+      if (!profile) return [];
+      const jobs = await prisma.transportRequest.findMany({
+        where: { providerId: profile.id, status: "DELIVERED" },
+        select: { id: true, pickupLocation: true, deliveryLocation: true, actualCost: true, estimatedCost: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: limit,
+      });
+      return jobs.map((j) => ({
+        id: j.id,
+        label: `${j.pickupLocation} → ${j.deliveryLocation}`,
+        detail: "Delivery job",
+        amount: j.actualCost ?? j.estimatedCost ?? null,
+        date: j.updatedAt,
+      }));
+    }
+    case "STORAGE_FACILITY": {
+      const profile = await prisma.storageFacilityProfile.findUnique({ where: { userId }, select: { id: true } });
+      if (!profile) return [];
+      const bookings = await prisma.storageBooking.findMany({
+        where: { facilityId: profile.id, status: "DROPPED_OFF" },
+        select: {
+          id: true,
+          cropType: true,
+          quantity: true,
+          unit: true,
+          pricePerUnit: true,
+          droppedOffAt: true,
+          updatedAt: true,
+          farmer: { select: { name: true } },
+        },
+        orderBy: { droppedOffAt: "desc" },
+        take: limit,
+      });
+      return bookings.map((b) => ({
+        id: b.id,
+        label: b.cropType,
+        detail: `Dropped off by ${b.farmer.name} · ${b.quantity} ${b.unit}`,
+        amount: b.pricePerUnit * b.quantity,
+        date: b.droppedOffAt ?? b.updatedAt,
+      }));
+    }
+    default:
+      return [];
+  }
+}

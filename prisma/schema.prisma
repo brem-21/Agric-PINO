@@ -23,6 +23,10 @@ model User {
   residenceLocation          String?
   isVerified                 Boolean                 @default(false)
   verifiedAt                 DateTime?
+  // Set when an admin proactively invites this (eligible, unverified) user to
+  // apply for free verification — reaching the activity threshold alone no
+  // longer unlocks self-service apply, see src/lib/verification.ts.
+  verificationInvitedAt      DateTime?
   // Add-on capability alongside `role` (mirrors isVerified's plumbing) — an
   // existing Farmer/Buyer/Logistics/Storage Facility user can also join the
   // Incident Team without losing their primary role/dashboard.

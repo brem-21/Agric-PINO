@@ -54,6 +54,7 @@ export async function GET() {
       ghanaCardNumber: true,
       ghanaCardName: true,
       residenceLocation: true,
+      verificationInvitedAt: true,
     },
   });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -78,6 +79,7 @@ export async function GET() {
     ghanaCardNumber: user.ghanaCardNumber,
     ghanaCardName: user.ghanaCardName,
     residenceLocation: user.residenceLocation,
+    invited: !!user.verificationInvitedAt,
   });
 }
 
@@ -130,7 +132,7 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, name: true, email: true, phone: true, role: true, isVerified: true },
+    select: { id: true, name: true, email: true, phone: true, role: true, isVerified: true, verificationInvitedAt: true },
   });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
@@ -179,6 +181,13 @@ export async function POST(req: NextRequest) {
     const data = submitSchema.parse(body);
 
     if (eligibleForFree) {
+      if (!user.verificationInvitedAt) {
+        return NextResponse.json(
+          { error: "You need an invite from an admin before applying for free verification." },
+          { status: 403 }
+        );
+      }
+
       const request = await prisma.verificationRequest.create({
         data: {
           userId: user.id,

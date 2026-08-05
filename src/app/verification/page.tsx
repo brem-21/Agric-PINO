@@ -30,6 +30,7 @@ interface VerificationStatus {
   ghanaCardNumber: string | null;
   ghanaCardName: string | null;
   residenceLocation: string | null;
+  invited: boolean;
 }
 
 type Step = "status" | "form" | "submitting";
@@ -135,8 +136,9 @@ export default function VerificationPage() {
 
   const latest = status.latestRequest;
   const noBlockingRequest = !latest || latest.status === "REJECTED";
-  const canApplyFree = !status.isVerified && status.eligible && noBlockingRequest;
+  const canApplyFree = !status.isVerified && status.eligible && noBlockingRequest && status.invited;
   const canApplyPaid = !status.isVerified && !status.eligible && noBlockingRequest;
+  const waitingForInvite = !status.isVerified && status.eligible && noBlockingRequest && !status.invited;
 
   return (
     <div className="min-h-screen bg-[#fcfcf7] py-8 px-4">
@@ -231,6 +233,15 @@ export default function VerificationPage() {
                 <Button onClick={() => setStep("form")} className="w-full bg-[#1c3a13] text-[#fcfcf7] rounded-full hover:bg-[#2a5219]">
                   {latest?.status === "REJECTED" ? "Apply Again" : "Apply for Verification"}
                 </Button>
+              )}
+
+              {waitingForInvite && (
+                <div className="flex items-center gap-3 rounded-xl bg-[#eeeee9] p-4">
+                  <ShieldCheck className="h-6 w-6 text-[#1c3a13]/60 flex-shrink-0" />
+                  <p className="text-sm text-[#1c3a13]/70">
+                    You&apos;ve crossed the free-verification threshold — an admin will reach out with next steps. No action needed from you yet.
+                  </p>
+                </div>
               )}
 
               {canApplyPaid && (
