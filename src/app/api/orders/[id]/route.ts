@@ -61,6 +61,7 @@ export async function GET(
           },
         },
       },
+      dispute: true,
     },
   });
 

@@ -60,6 +60,8 @@ const TYPE_ICON: Record<string, string> = {
   OFFER_COUNTERED: "🔄",
   OFFER_ACCEPTED: "✅",
   OFFER_REJECTED: "❌",
+  ORDER_DISPUTED: "🚫",
+  ORDER_DISPUTE_RESOLVED: "⚖️",
 };
 
 export function NotificationBell({

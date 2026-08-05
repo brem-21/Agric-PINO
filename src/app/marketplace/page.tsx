@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PRODUCE_CATEGORIES, NORTHERN_GHANA_REGIONS, formatCurrency, formatDate, getSpoilageUrgency } from "@/lib/utils";
+import { PRODUCE_CATEGORIES, NORTHERN_GHANA_REGIONS, FLAGSHIP_CORRIDORS, formatCurrency, formatDate, getSpoilageUrgency } from "@/lib/utils";
 import { FollowButton } from "@/components/shared/follow-button";
 import { ProductImageSlideshow } from "@/components/shared/product-image-slideshow";
 import { QuickMessageDialog } from "@/components/shared/quick-message-dialog";
@@ -344,6 +344,22 @@ export default function MarketplacePage() {
     setPage(1);
   }
 
+  function applyCorridor(corridor: typeof FLAGSHIP_CORRIDORS[number]) {
+    setSelectedCategories([corridor.category]);
+    setRegion(corridor.region || "all");
+    setSearchInput(corridor.searchTerm);
+    setSearch(corridor.searchTerm);
+    setPage(1);
+  }
+
+  const activeCorridorKey = FLAGSHIP_CORRIDORS.find(
+    (c) =>
+      selectedCategories.length === 1 &&
+      selectedCategories[0] === c.category &&
+      (region || "all") === (c.region || "all") &&
+      search === c.searchTerm
+  )?.key;
+
   function clearFilters() {
     setSelectedCategories([]);
     setMinPrice("");
@@ -553,6 +569,26 @@ export default function MarketplacePage() {
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Flagship corridors — the specific crops/regions this platform is built around */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-[#1c3a13]/40 uppercase tracking-wide">Flagship corridors</span>
+              {FLAGSHIP_CORRIDORS.map((corridor) => (
+                <button
+                  key={corridor.key}
+                  onClick={() => applyCorridor(corridor)}
+                  title={corridor.description}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    activeCorridorKey === corridor.key
+                      ? "border-[#1c3a13] bg-[#1c3a13] text-[#fcfcf7]"
+                      : "border-[#eeeee9] bg-[#fcfcf7] text-[#1c3a13]/70 hover:border-[#1c3a13] hover:text-[#1c3a13]"
+                  }`}
+                >
+                  <span>{corridor.emoji}</span>
+                  {corridor.label}
+                </button>
+              ))}
             </div>
 
             {/* Listings Grid */}

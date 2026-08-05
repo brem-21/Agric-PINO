@@ -137,6 +137,32 @@ export const PRODUCE_CATEGORIES = [
   { value: "LIVESTOCK", label: "Livestock" },
 ];
 
+// The two named corridors this platform is actually built and evaluated
+// around (see the scope statement in README.md) — surfaced as real,
+// clickable filters in the marketplace instead of living only in pitch copy,
+// so the platform's narrowed focus is something a judge can click into, not
+// just read about.
+export const FLAGSHIP_CORRIDORS = [
+  {
+    key: "tomato-upper-east",
+    emoji: "🍅",
+    label: "Upper East Tomato Corridor",
+    description: "Cold-chain storage for the Upper East tomato value chain",
+    category: "VEGETABLES",
+    region: "Upper East Region",
+    searchTerm: "Tomatoes",
+  },
+  {
+    key: "grain-hermetic",
+    emoji: "🌾",
+    label: "Northern Savannah Grain Corridor",
+    description: "Hermetic dry storage for grains across the Northern Savannah Zone",
+    category: "GRAINS",
+    region: "",
+    searchTerm: "",
+  },
+] as const;
+
 export const COMMON_CROPS = [
   "Tomatoes",
   "Peppers",

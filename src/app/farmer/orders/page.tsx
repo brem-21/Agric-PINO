@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { FileText, Radio, RefreshCw, Truck, Star, Store } from "lucide-react";
+import { FileText, Radio, RefreshCw, Truck, Star, Store, AlertTriangle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -44,6 +44,14 @@ const PAYMENT_VARIANT: Record<string, "default" | "secondary" | "destructive" | 
   REFUNDED: "destructive",
 };
 
+const DISPUTE_REASON_LABEL: Record<string, string> = {
+  NOT_FRESH: "Not fresh",
+  WRONG_QUANTITY: "Wrong quantity",
+  WRONG_ITEM: "Wrong item",
+  DAMAGED: "Damaged",
+  OTHER: "Other",
+};
+
 type Order = {
   id: string;
   deliveryNumber: string | null;
@@ -62,6 +70,8 @@ type Order = {
   };
   payment: { status: string; method: string } | null;
   transportRequest: { id: string; status: string } | null;
+  dispute: { id: string; status: string; reason: string; description: string } | null;
+  bulkOrder: { id: string; cropType: string } | null;
 };
 
 const POLL_MS = 20_000;
@@ -120,6 +130,23 @@ export default function FarmerOrdersPage() {
       await fetchOrders();
     } finally {
       setActing(null);
+    }
+  }
+
+  const [resolving, setResolving] = useState<string | null>(null);
+  const [resolveNotes, setResolveNotes] = useState<Record<string, string>>({});
+
+  async function resolveDispute(orderId: string, status: "RESOLVED_REFUNDED" | "RESOLVED_REPLACEMENT" | "RESOLVED_DENIED") {
+    setResolving(`${orderId}:${status}`);
+    try {
+      await fetch(`/api/orders/${orderId}/dispute`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, resolutionNote: resolveNotes[orderId] }),
+      });
+      await fetchOrders();
+    } finally {
+      setResolving(null);
     }
   }
 
@@ -193,6 +220,11 @@ export default function FarmerOrdersPage() {
                           {order.buyer.buyerProfile?.businessName ?? order.buyer.name}
                         </p>
                         <p className="text-xs text-[#1c3a13]/40">{order.buyer.phone}</p>
+                        {order.bulkOrder && (
+                          <span className="inline-flex items-center mt-1 rounded-full bg-[#eeeee9] px-2 py-0.5 text-xs text-[#1c3a13]/60">
+                            Part of a bulk order
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 font-medium text-[#1c3a13]">{order.listing.cropType}</td>
                       <td className="px-6 py-4 text-right text-[#1c3a13]/70">
@@ -280,6 +312,45 @@ export default function FarmerOrdersPage() {
                     </tr>
                   );
                 })}
+                {orders.filter((o) => o.dispute).map((order) => (
+                  <tr key={`${order.id}-dispute`} className="bg-red-50">
+                    <td colSpan={10} className="px-6 py-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="flex items-center gap-1.5 text-sm font-medium text-red-800">
+                          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                          {order.listing.cropType} — {DISPUTE_REASON_LABEL[order.dispute!.reason] ?? order.dispute!.reason}
+                        </span>
+                        <span className="text-sm text-red-700">{order.dispute!.description}</span>
+                        {order.dispute!.status === "OPEN" ? (
+                          <div className="flex flex-wrap items-center gap-2 ml-auto">
+                            <input
+                              value={resolveNotes[order.id] ?? ""}
+                              onChange={(e) => setResolveNotes((prev) => ({ ...prev, [order.id]: e.target.value }))}
+                              placeholder="Note (optional)…"
+                              className="rounded-lg border border-red-200 bg-[#fcfcf7] px-2.5 py-1 text-xs focus:border-red-400 focus:outline-none"
+                            />
+                            <Button size="sm" disabled={!!resolving} onClick={() => resolveDispute(order.id, "RESOLVED_REFUNDED")}
+                              className="rounded-full bg-[#1c3a13] hover:bg-[#2a5219] text-[#fcfcf7] h-7 px-3 text-xs">
+                              {resolving === `${order.id}:RESOLVED_REFUNDED` ? <Loader2 className="h-3 w-3 animate-spin" /> : "Refund"}
+                            </Button>
+                            <Button size="sm" variant="outline" disabled={!!resolving} onClick={() => resolveDispute(order.id, "RESOLVED_REPLACEMENT")}
+                              className="rounded-full border-red-300 text-red-700 hover:bg-red-100 h-7 px-3 text-xs">
+                              {resolving === `${order.id}:RESOLVED_REPLACEMENT` ? <Loader2 className="h-3 w-3 animate-spin" /> : "Replacement"}
+                            </Button>
+                            <Button size="sm" variant="ghost" disabled={!!resolving} onClick={() => resolveDispute(order.id, "RESOLVED_DENIED")}
+                              className="rounded-full text-red-700 hover:bg-red-100 h-7 px-3 text-xs">
+                              {resolving === `${order.id}:RESOLVED_DENIED` ? <Loader2 className="h-3 w-3 animate-spin" /> : "Deny"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="ml-auto text-xs font-medium text-red-700">
+                            Resolved: {order.dispute!.status.replace("RESOLVED_", "").toLowerCase()}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

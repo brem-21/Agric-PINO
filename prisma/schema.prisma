@@ -47,6 +47,9 @@ model User {
   notifications              Notification[]          @relation("NotificationRecipient")
   buyerOrders                Order[]                 @relation("BuyerOrders")
   farmerOrders               Order[]                 @relation("FarmerOrders")
+  bulkOrders                 BulkOrder[]             @relation("BuyerBulkOrders")
+  disputesRaised             OrderDispute[]          @relation("OrderDisputeRaiser")
+  disputesResolved           OrderDispute[]          @relation("OrderDisputeResolver")
   buyerOffers                Offer[]                 @relation("BuyerOffers")
   farmerOffers               Offer[]                 @relation("FarmerOffers")
   listings                   ProduceListing[]
@@ -175,13 +178,78 @@ model Order {
   storageFacilityId        String?
   facilityCommissionRate   Float?
   facilityCommissionAmount Float?
+  // Set only when this order was created as one leg of a wholesale buyer's
+  // multi-farmer bulk order (see BulkOrder) — null for an ordinary single
+  // listing purchase. Each leg is still its own independent Order: the
+  // farmer sees and fulfills exactly their own leg, same as always.
+  bulkOrderId              String?
   buyer                    User                    @relation("BuyerOrders", fields: [buyerId], references: [id])
   farmer                   User                    @relation("FarmerOrders", fields: [farmerId], references: [id])
   listing                  ProduceListing          @relation(fields: [listingId], references: [id])
   storageFacility          StorageFacilityProfile? @relation(fields: [storageFacilityId], references: [id])
+  bulkOrder                BulkOrder?              @relation(fields: [bulkOrderId], references: [id])
   payment                  Payment?
   transportRequest         TransportRequest?
   offer                    Offer?
+  dispute                  OrderDispute?
+}
+
+// A wholesale/processor buyer's single purchase intent for one crop, spanning
+// however many farmers' listings it took to fill the quantity — each farmer
+// still gets their own ordinary Order (see Order.bulkOrderId) with their own
+// fulfillment lifecycle; this is purely the buyer-facing aggregation wrapper.
+model BulkOrder {
+  id            String   @id @default(cuid())
+  buyerId       String
+  cropType      String
+  totalQuantity Float
+  totalAmount   Float
+  notes         String?
+  createdAt     DateTime @default(now())
+  buyer         User     @relation("BuyerBulkOrders", fields: [buyerId], references: [id])
+  orders        Order[]
+
+  @@index([buyerId])
+}
+
+enum OrderDisputeReason {
+  NOT_FRESH
+  WRONG_QUANTITY
+  WRONG_ITEM
+  DAMAGED
+  OTHER
+}
+
+enum OrderDisputeStatus {
+  OPEN
+  RESOLVED_REFUNDED
+  RESOLVED_REPLACEMENT
+  RESOLVED_DENIED
+}
+
+// The accountability path for delivered produce a buyer isn't willing to
+// accept — filed against a specific order, resolved by whichever party can
+// actually do something about it (the farmer directly, or an admin if the
+// farmer doesn't act / the two sides disagree). A refund resolution is what
+// finally gives Order.paymentStatus's REFUNDED value a real code path.
+model OrderDispute {
+  id             String             @id @default(cuid())
+  orderId        String             @unique
+  raisedById     String
+  reason         OrderDisputeReason
+  description    String
+  photo          String?
+  status         OrderDisputeStatus @default(OPEN)
+  resolutionNote String?
+  resolvedById   String?
+  resolvedAt     DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  order          Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  raisedBy       User               @relation("OrderDisputeRaiser", fields: [raisedById], references: [id])
+  resolvedBy     User?              @relation("OrderDisputeResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
 }
 
 enum OfferStatus {

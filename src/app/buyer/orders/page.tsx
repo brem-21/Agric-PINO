@@ -6,6 +6,7 @@ import { ShoppingBag, Package, ExternalLink, RefreshCw, Radio, Star, Truck, Stor
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { RejectProduceDialog } from "@/components/shared/reject-produce-dialog";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "warning" | "success" | "outline"> = {
   PENDING: "warning",
@@ -32,6 +33,21 @@ type Order = {
     farmerProfile: { farmName: string | null; location: string | null } | null;
   };
   payment: { method: string; status: string } | null;
+  dispute: { status: string } | null;
+};
+
+const DISPUTE_LABEL: Record<string, string> = {
+  OPEN: "Dispute: Open",
+  RESOLVED_REFUNDED: "Dispute: Refunded",
+  RESOLVED_REPLACEMENT: "Dispute: Replacement",
+  RESOLVED_DENIED: "Dispute: Denied",
+};
+
+const DISPUTE_STYLE: Record<string, string> = {
+  OPEN: "bg-red-100 text-red-700",
+  RESOLVED_REFUNDED: "bg-[#d3fa99] text-[#1c3a13]",
+  RESOLVED_REPLACEMENT: "bg-[#eeeee9] text-[#1c3a13]",
+  RESOLVED_DENIED: "bg-[#eeeee9] text-[#1c3a13]/50",
 };
 
 const POLL_MS = 20_000;
@@ -232,14 +248,22 @@ export default function BuyerOrdersPage() {
                       </td>
                       <td className="px-6 py-4 text-[#1c3a13]/50">{formatDate(order.createdAt)}</td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {order.status === "DELIVERED" && (
+                        <div className="flex items-center justify-end gap-1 flex-wrap">
+                          {order.status === "DELIVERED" && !order.dispute && (
                             <Button variant="outline" size="sm" asChild className="rounded-full border-[#eeeee9] text-[#1c3a13] hover:bg-[#eeeee9]">
                               <Link href={`/review/${order.id}`}>
                                 <Star className="h-3.5 w-3.5 mr-1" />
                                 Rate
                               </Link>
                             </Button>
+                          )}
+                          {order.status === "DELIVERED" && !order.dispute && (
+                            <RejectProduceDialog orderId={order.id} cropType={order.listing.cropType} onResolved={() => fetchOrders(true)} />
+                          )}
+                          {order.dispute && (
+                            <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${DISPUTE_STYLE[order.dispute.status] ?? "bg-[#eeeee9] text-[#1c3a13]"}`}>
+                              {DISPUTE_LABEL[order.dispute.status] ?? order.dispute.status}
+                            </span>
                           )}
                           <Button variant="ghost" size="sm" asChild>
                             <Link href={`/delivery/${order.id}`}>

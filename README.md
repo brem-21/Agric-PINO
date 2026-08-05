@@ -38,12 +38,14 @@ This document walks through every feature currently in the product, organized by
 - **B2B-first buyer types**: Wholesaler and Processor lead the buyer segment, alongside Retailer, Restaurant, Exporter, and Household
 - **2 payment paths**: MTN/Telecel mobile money (via Paystack) or cash-on-delivery
 - **AI-personalized** buyer recommendations and farmer market insights
-- **Paid identity verification** (Ghana Card) gates the ability to sell or accept delivery jobs
+- **Ghana Card identity verification** as a trust badge, not a functional gate — every account can already list, order, accept jobs, and book storage; verification unlocks for free after 10 completed transactions, or immediately for a one-time fee, with an admin still reviewing the ID either way
 - **End-to-end encrypted** in-app messaging (AES-256-GCM at rest)
 - **Real-time delivery tracking** with support for multi-rider relay handoffs
 - **Live platform stats** (active farmers, listings, districts, produce delivered) shown publicly on the landing page
 - **Binding price negotiation**: a buyer can make a structured offer (quantity + price + expiry) instead of haggling over chat — the farmer accepts, counters, or declines, and acceptance auto-generates a real order at the agreed terms
 - **Risk-based listing approval**: a verified farmer with a clean record and a price in line with the market auto-publishes immediately; only price outliers or flagged accounts wait on manual admin review
+- **Multi-farmer bulk orders**: a Wholesaler/Processor buyer can fill one purchase from several farmers' listings of the same crop in a single transaction — each farmer still fulfills only their own leg
+- **Order disputes with a real refund path**: a buyer can reject delivered produce with a reason and photo; the farmer or an admin resolves it with a refund, a replacement, or a denial — a refund actually flips the order's payment status, not just a complaint on file
 
 ---
 
@@ -91,12 +93,15 @@ Users log in with **phone number + password**, not email — because that's how 
 
 **Why it matters:** protects accounts (and the money tied to them) from automated credential-stuffing attacks, without requiring the email address that a meaningful share of users in this market may not have.
 
-### Paid Ghana Card identity verification
-A second, **paid** trust tier, separate from free registration: the user submits their Ghana Card number, the name on the card, a residence location, and a photo of the card (front, optionally back), then pays a verification fee — **GHS 50 for Farmers and Storage Facilities, GHS 30 for Logistics Providers, GHS 10 for Buyers** — through the same mobile-money payment flow used elsewhere on the platform. An admin then manually reviews the submitted ID photo and approves or rejects the request. Only once both the payment clears **and** an admin approves does the account become "Verified."
+### Ghana Card identity verification — a trust badge anyone can reach, free or fast-tracked
+Verification is deliberately **not** a functional gate — a farmer without it can already list produce, a rider can already accept jobs, a buyer can already order or make offers, and a farmer can already book storage. Gating those actions behind a paid step would exclude exactly the smallholder farmers the platform exists to serve, so instead verification is a trust badge two different paths can reach:
 
-Verification isn't just a badge — it's a functional gate: **farmers cannot publish a produce listing**, and **logistics providers cannot accept a delivery job**, until they're verified.
+- **Free, activity-based:** once an account has been part of 10 completed transactions (delivered orders for a farmer/buyer, delivered jobs for a rider, dropped-off bookings for a facility), it becomes eligible to apply — no payment required.
+- **Paid fast-track:** an account that doesn't want to wait can apply immediately by paying a one-time fee — **GHS 50 for Farmers and Storage Facilities, GHS 30 for Logistics Providers, GHS 10 for Buyers** — through the same mobile-money flow used elsewhere on the platform.
 
-**Why it matters:** this is both a fraud-prevention control (a human actually checks the ID before someone can sell or move goods) and a small revenue stream, and gating the highest-risk actions (selling, accepting paid delivery work) behind it means the platform's core money-moving activities always have a verified identity behind them.
+Either way, the user submits their Ghana Card number, the name on the card, a residence location, and a photo of the card (front, optionally back), and **an admin always reviews the submitted ID photo and approves or rejects it** — paying only buys the ability to apply sooner, never the badge itself, so the human fraud check that matters is identical on both paths. An unpaid fast-track application stays invisible to the admin review queue until its payment actually clears.
+
+**Why it matters:** a paid-only verification tier would price out the smallholder farmers this platform is built for; splitting it into a free activity-based path and an optional paid fast-track keeps the fraud-prevention value of a human ID check (and the small revenue stream) without making trust something only better-resourced users can afford.
 
 ### Becoming an Admin — a separate, mandatory approval gate
 Choosing "Admin" at registration does **not** grant admin access immediately. It creates an `AdminRequest` — a mandatory (not optional, unlike ID verification) review that requires a Ghana Card photo and must be approved by an *existing* admin before any admin feature becomes available. Until then, the user sees a clear "application pending" status screen. Separately, an existing admin can promote any user to Admin directly from the Users screen with one click, and the very first admin (when none exist yet to approve anyone) can be created via a command-line script.
@@ -122,9 +127,9 @@ Each farmer's own listings table also surfaces a **spoilage-risk indicator** —
 **Why it matters:** this is the core reason a farmer joins the platform — the ability to reach buyers directly — and risk-based auto-approval keeps the manual review queue proportional to actual risk instead of gatekeeping every routine listing behind a human, which matters because produce spoils in hours-to-days, not however long a queue takes to clear. The spoilage-risk flag turns "produce quietly rotting unsold," the single most common driver of post-harvest loss in the research, into something a farmer can act on in time.
 
 ### Order management with a live status workflow
-A live-updating (polling every 20 seconds) table of incoming orders, each advanceable through its fulfillment lifecycle with a single button — Confirm Order → Mark Ready for Pickup — with rows visibly highlighting when a status just changed. Every order links to a printable delivery slip, and once delivered, to a one-click shortcut to rate the buyer.
+A live-updating (polling every 20 seconds) table of incoming orders, each advanceable through its fulfillment lifecycle with a single button — Confirm Order → Mark Ready for Pickup — with rows visibly highlighting when a status just changed. Every order links to a printable delivery slip, and once delivered, to a one-click shortcut to rate the buyer. An order that's part of a wholesale buyer's bulk order is flagged as such, but is otherwise managed identically to any other order — a farmer only ever sees and fulfills their own leg. If a buyer rejects a delivered order, it surfaces as a flagged row right in this table with the buyer's stated reason and a one-click **Refund / Replacement / Deny** resolution.
 
-**Why it matters:** farmers manage order fulfillment without a phone call, and the buyer sees the same status update in near real time on their side.
+**Why it matters:** farmers manage order fulfillment without a phone call, and the buyer sees the same status update in near real time on their side, and a disputed order is resolved by the farmer directly, in the same table they already work from, instead of a separate unresolved complaint thread.
 
 ### Responding to offers
 Every buyer offer on a farmer's listing lands on a dedicated **Offers** page — quantity, proposed price, an optional message, and a countdown to when the offer expires (48 hours per round). A farmer can **Accept** it outright, **Counter** with different quantity/price terms, or **Decline** — and the platform enforces whose turn it is, so a farmer can't accept their own still-pending proposal and a buyer can't accept a counter before the farmer sends one. Accepting either side's terms instantly creates a real order at that exact price and quantity — no separate step, no relying on a phone call to confirm what was agreed.
@@ -158,7 +163,9 @@ The same at-a-glance stat-tile pattern (total orders, active orders, total spent
 ### Marketplace browse & search
 A full storefront experience: debounced text search, multi-select category filters, min/max price range, region filter, a **"spoiling soon — sell first" sort**, and pagination — all reflecting only approved, active listings. Each listing card shows a photo slideshow, price, quantity available, harvest date, a spoilage-urgency badge when the produce is within a week of its expiry date, a **"Stored at [Facility Name]"** badge when the produce is being held at a storage facility, the farmer's name and farm, a live follow-count, and one-click shortcuts to message the farmer or place an order.
 
-**Why it matters:** this is the buyer's core discovery tool — real filtering (by price, category, region) is what turns a scattered set of smallholder farmers into something actually shoppable, and the urgency sort lets buyers actively route demand toward the produce most at risk of being lost, instead of that surplus quietly rotting unsold.
+Above the results, two **Flagship Corridor** chips — 🍅 Upper East Tomato Corridor and 🌾 Northern Savannah Grain Corridor — apply the exact category/region/crop scope named in this platform's own stated focus. They're real, clickable filters, not just pitch copy: clicking one narrows the marketplace to precisely that corridor's produce.
+
+**Why it matters:** this is the buyer's core discovery tool — real filtering (by price, category, region) is what turns a scattered set of smallholder farmers into something actually shoppable, and the urgency sort lets buyers actively route demand toward the produce most at risk of being lost, instead of that surplus quietly rotting unsold. The flagship-corridor chips make the platform's narrowed scope something anyone can click into and verify, not just a claim in a pitch deck.
 
 ### Listing detail & one-flow ordering
 A full listing page with a photo slideshow, the farmer's profile card (star rating, farm size, bio, verified badge), a spoilage-urgency banner when the listing is nearing its expiry date, and — when the produce is stored at a facility — the facility's name and location shown as the effective pickup point, alongside an order panel with a quantity stepper capped at real available stock, a live running total, and a "Place Order" action. Buyers can still message the farmer directly at any time, whether or not the produce is currently in storage. After placing an order, a payment-choice panel appears immediately — mobile money or cash-on-delivery (if the farmer accepts it).
@@ -170,15 +177,20 @@ Instead of only the listed price, a buyer can click **Make an Offer** and propos
 
 **Why it matters:** haggling over price is how this market actually works — without a structured offer flow, that negotiation happens in an unstructured message thread with no price field, no expiry, and no way to actually check out at the agreed price, which pushes buyers and farmers back toward an informal, unprotected side deal.
 
+### Bulk orders — buying wholesale quantities across multiple farmers
+A Wholesaler or Processor buyer (the segment this platform is actually built for) doesn't have to place one order per farmer to fill a real wholesale quantity. From a dedicated **Bulk Order** flow, a buyer picks a crop, sees every active listing for it across *every* farmer, and selects however many listings — and however many different farmers — it takes to reach the quantity they need, all in one submission. The platform creates one ordinary `Order` per farmer behind the scenes — each farmer still only ever sees and fulfills their own leg, exactly like a normal order — while the buyer sees one rolled-up **Bulk Order** with a farmer-by-farmer delivery status. This flow is scoped to Wholesaler/Processor accounts specifically; a Retailer, Restaurant, Exporter, or Household buyer still uses the ordinary single-listing order flow, since bulk aggregation across farmers is a wholesale buying pattern, not a retail one.
+
+**Why it matters:** most smallholder-farmer marketplaces quietly assume a farmer sells small quantities directly to one retailer or consumer at a time. In practice, a lot of Northern Ghana's produce moves through wholesalers who aggregate across many farmers before reselling — this is the platform actually modeling that transaction shape instead of forcing a wholesale buyer to place a dozen separate retail-sized orders by hand.
+
 ### AI-personalized recommendations
 Using the buyer's purchase history, browsing activity, and GPS location, an AI model selects the top nearby listings most relevant to that specific buyer and writes a short, friendly recommendation — deliverable both on the dashboard and as an SMS nudge.
 
 **Why it matters:** proactively reconnects buyers with produce they're likely to want, driving repeat purchases instead of relying on buyers remembering to check back — a personalization layer smallholder-farmer marketplaces don't typically have.
 
-### Order tracking
-The buyer's mirror of the farmer's order table: farm name and location, whether the order is pickup or delivery, payment method and status, and a one-click "Rate" action once delivered.
+### Order tracking, and rejecting produce that doesn't meet the deal
+The buyer's mirror of the farmer's order table: farm name and location, whether the order is pickup or delivery, payment method and status, and a one-click "Rate" action once delivered. Once an order is delivered, a buyer who isn't willing to accept it — wrong quantity, wrong item, damaged, not fresh — can **Reject Produce**: a reason, a description, and an optional photo file a real dispute against that specific order, notifying both the farmer and admins. The farmer (or an admin, if the farmer doesn't act) resolves it with a **refund** (which actually flips the order's payment status to refunded), a **replacement**, or a **denial** — a defined accountability path, not just a complaint that sits unresolved.
 
-**Why it matters:** gives buyers delivery-app-style visibility into what is otherwise an informal produce trade.
+**Why it matters:** gives buyers delivery-app-style visibility into what is otherwise an informal produce trade, and answers the question every produce marketplace eventually has to: who bears responsibility, and what actually happens, when delivered produce isn't what was promised.
 
 ---
 
@@ -288,6 +300,11 @@ The mandatory review queue for anyone who registered directly as an Admin, descr
 Every role's incident reports land in one queue, filterable by status, with the ability to read the full report and set a resolution status and notes.
 
 **Why it matters:** centralized dispute resolution across the entire platform, regardless of which role filed or was the subject of a complaint.
+
+### Order disputes
+A separate, order-specific queue from general complaints: every buyer-filed "Reject Produce" dispute, with the reason, description, photo (if any), the order's payment status, and the same **Refund / Replacement / Deny** resolution the farmer can also apply — admin visibility exists specifically for when a farmer doesn't act, or the two sides disagree, so a dispute is never stuck with no one able to resolve it.
+
+**Why it matters:** answers, concretely, who is responsible when delivered produce isn't accepted — not left as an open question the way a general complaint can be.
 
 ### Messages
 The same live, searchable, encrypted direct-messaging inbox every other role has, letting admins reach any user directly.

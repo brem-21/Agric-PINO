@@ -63,13 +63,6 @@ test.describe("Public pages", () => {
     expect(await page.locator("body").isVisible()).toBeTruthy();
   });
 
-  test("equipment marketplace loads", async ({ page }) => {
-    await page.goto("/equipment");
-    await page.waitForLoadState("networkidle");
-    await screenshot(page, "equipment-marketplace");
-    expect(await page.locator("body").isVisible()).toBeTruthy();
-  });
-
   test("find rider page loads", async ({ page }) => {
     await page.goto("/find-rider");
     await page.waitForLoadState("networkidle");
@@ -177,32 +170,6 @@ test.describe("Buyer portal", () => {
   });
 });
 
-test.describe("Vendor portal", () => {
-  test("vendor dashboard loads", async ({ page }) => {
-    await loginAs(page, process.env.VENDOR_PHONE ?? "0244000030", process.env.VENDOR_PASS ?? "password123");
-    await page.goto("/vendor/dashboard");
-    await page.waitForLoadState("networkidle");
-    await screenshot(page, "vendor-dashboard");
-    expect(await page.locator("body").isVisible()).toBeTruthy();
-  });
-
-  test("vendor products page loads", async ({ page }) => {
-    await loginAs(page, process.env.VENDOR_PHONE ?? "0244000030", process.env.VENDOR_PASS ?? "password123");
-    await page.goto("/vendor/products");
-    await page.waitForLoadState("networkidle");
-    await screenshot(page, "vendor-products");
-    expect(await page.locator("body").isVisible()).toBeTruthy();
-  });
-
-  test("vendor orders page loads", async ({ page }) => {
-    await loginAs(page, process.env.VENDOR_PHONE ?? "0244000030", process.env.VENDOR_PASS ?? "password123");
-    await page.goto("/vendor/orders");
-    await page.waitForLoadState("networkidle");
-    await screenshot(page, "vendor-orders");
-    expect(await page.locator("body").isVisible()).toBeTruthy();
-  });
-});
-
 test.describe("Logistics portal", () => {
   test("logistics requests page loads", async ({ page }) => {
     await loginAs(page, process.env.RIDER_PHONE ?? "0244000020", process.env.RIDER_PASS ?? "password123");
@@ -285,33 +252,6 @@ test.describe("Marketplace interactions", () => {
     expect(await page.locator("body").isVisible()).toBeTruthy();
   });
 
-  test("equipment message vendor dialog opens", async ({ page }) => {
-    await loginAs(page, process.env.BUYER_PHONE ?? "0244000010", process.env.BUYER_PASS ?? "password123");
-    await page.goto("/equipment");
-    await page.waitForLoadState("networkidle");
-    const msgBtn = page.locator('button:has-text("Message Vendor")').first();
-    if (await msgBtn.count() > 0) {
-      await msgBtn.click();
-      await page.waitForTimeout(500);
-      await screenshot(page, "equipment-message-dialog");
-      const dialog = await page.locator('[role="dialog"]').count();
-      expect(dialog).toBeGreaterThan(0);
-    }
-  });
-
-  test("add to cart works on equipment page", async ({ page }) => {
-    await page.goto("/equipment");
-    await page.waitForLoadState("networkidle");
-    const addBtn = page.locator('button:has-text("Add to Cart")').first();
-    if (await addBtn.count() > 0) {
-      await addBtn.click();
-      await page.waitForTimeout(500);
-      await screenshot(page, "equipment-cart");
-      // Cart count should appear
-      const cartCount = await page.locator('text=/[1-9][0-9]*/').count();
-      expect(cartCount).toBeGreaterThanOrEqual(0);
-    }
-  });
 });
 
 test.describe("Messaging portal", () => {
@@ -353,11 +293,6 @@ test.describe("API health checks", () => {
     expect(res.status()).toBe(200);
   });
 
-  test("GET /api/equipment returns 200", async ({ page }) => {
-    const res = await page.request.get("/api/equipment");
-    expect(res.status()).toBe(200);
-  });
-
   test("GET /api/transport returns 401 (auth required)", async ({ page }) => {
     const res = await page.request.get("/api/transport");
     expect([401, 403]).toContain(res.status());
@@ -385,7 +320,6 @@ test.describe("Console errors", () => {
   const pages = [
     { path: "/", name: "home" },
     { path: "/marketplace", name: "marketplace" },
-    { path: "/equipment", name: "equipment" },
     { path: "/find-rider", name: "find-rider" },
     { path: "/auth/login", name: "login" },
     { path: "/auth/register", name: "register" },

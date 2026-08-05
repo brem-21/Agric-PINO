@@ -49,6 +49,8 @@ export async function GET(req: NextRequest) {
       farmer: { select: { id: true, name: true, phone: true, farmerProfile: true } },
       payment: true,
       transportRequest: true,
+      dispute: true,
+      bulkOrder: { select: { id: true, cropType: true, buyer: { select: { name: true } } } },
     },
     orderBy: { createdAt: "desc" },
   });

@@ -152,50 +152,6 @@ test.describe("Marketplace (produce)", () => {
   });
 });
 
-test.describe("Equipment marketplace", () => {
-  test("search, add to cart, cart drawer, message vendor", async ({ page }) => {
-    const errors: string[] = [];
-    trackConsole(page, errors);
-    await page.goto("/equipment");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(1000);
-
-    const backBtn = page.locator('[aria-label="Go back"]').first();
-    console.log("BackButton present on /equipment:", await backBtn.count() > 0);
-
-    const addBtn = page.locator('button:has-text("Add to Cart")').first();
-    if (await addBtn.count() > 0) {
-      await addBtn.click();
-      await page.waitForTimeout(400);
-      const cartBtn = page.locator('button:has-text("Cart")').first();
-      await cartBtn.click();
-      await page.waitForTimeout(400);
-      await page.screenshot({ path: "tests/screenshots/equipment-cart-drawer.png" });
-      const qtyText = await page.locator("text=/Your Cart/i").count();
-      console.log("Cart drawer opened:", qtyText > 0);
-      // Close the drawer via its backdrop — the drawer itself blocks all other
-      // clicks while open (this is expected modal behavior, not a bug).
-      await page.locator(".fixed.inset-0.bg-black\\/40").click({ force: true }).catch(() => {});
-      await page.waitForTimeout(300);
-    } else {
-      console.log("No 'Add to Cart' button found — equipment listing may be empty or out of stock");
-    }
-
-    const msgBtn = page.locator('button:has-text("Message Vendor")').first();
-    if (await msgBtn.count() > 0) {
-      await msgBtn.click();
-      await page.waitForTimeout(500);
-      const dialog = await page.locator('[role="dialog"]').count();
-      console.log("Message vendor dialog opened:", dialog > 0);
-      await page.screenshot({ path: "tests/screenshots/equipment-message-dialog-v2.png" });
-    }
-
-    const real = realErrors(errors);
-    if (real.length) console.log("EQUIPMENT CONSOLE ERRORS:", real);
-    expect(real).toEqual([]);
-  });
-});
-
 test.describe("Find rider (map)", () => {
   test("Leaflet map renders without CSP errors", async ({ page }) => {
     const cspErrors: string[] = [];
@@ -221,7 +177,7 @@ test.describe("Login flows — all 5 roles", () => {
     { role: "FARMER", phone: "0244000001", expectPath: "/farmer" },
     { role: "BUYER", phone: "0244000010", expectPath: "/buyer" },
     { role: "LOGISTICS", phone: "0244000020", expectPath: "/logistics" },
-    { role: "VENDOR", phone: "0244000030", expectPath: "/vendor" },
+    { role: "STORAGE_FACILITY", phone: "0244000030", expectPath: "/storage" },
     { role: "ADMIN", phone: "0244000099", expectPath: "/admin" },
   ];
 
@@ -316,12 +272,12 @@ test.describe("Registration — all 5 role paths", () => {
     console.log("Submitting without photo blocked client-side:", errorShown > 0, "| still on form:", stillOnForm > 0);
   });
 
-  test("LOGISTICS and VENDOR role options exist on register page", async ({ page }) => {
+  test("LOGISTICS and STORAGE FACILITY role options exist on register page", async ({ page }) => {
     await page.goto("/auth/register");
     await page.waitForLoadState("domcontentloaded");
     const logisticsOpt = await page.locator('button:has-text("Logistics")').count();
-    const vendorOpt = await page.locator('button:has-text("Vendor")').count();
-    console.log("Logistics option:", logisticsOpt, "Vendor option:", vendorOpt);
+    const storageOpt = await page.locator('button:has-text("Storage")').count();
+    console.log("Logistics option:", logisticsOpt, "Storage Facility option:", storageOpt);
   });
 });
 

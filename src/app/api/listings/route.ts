@@ -23,6 +23,7 @@ const listingSchema = z.object({
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category") as ProduceCategory | null;
+  const cropType = searchParams.get("cropType");
   const search = searchParams.get("search");
   const region = searchParams.get("region");
   const minPrice = searchParams.get("minPrice");
@@ -37,6 +38,10 @@ export async function GET(req: NextRequest) {
     approvalStatus: "APPROVED" as never,
     ...(farmerId && { farmerId }),
     ...(category && { category }),
+    // Exact match — distinct from `search`'s contains-match, so the bulk-order
+    // flow (aggregating across farmers for one specific crop) doesn't
+    // accidentally pull in a different crop that shares a search substring.
+    ...(cropType && { cropType }),
     ...(search && {
       OR: [
         { cropType: { contains: search, mode: "insensitive" as const } },

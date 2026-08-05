@@ -20,6 +20,7 @@ import {
   Warehouse,
   UserPlus,
   Dumbbell,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SignOutButton } from "@/components/shared/signout-button";
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { href: "/admin/listings", label: "Listing Approvals", icon: CheckSquare },
   { href: "/admin/storage-facilities", label: "Storage Facilities", icon: Warehouse },
   { href: "/admin/complaints", label: "Complaints", icon: AlertTriangle },
+  { href: "/admin/disputes", label: "Order Disputes", icon: ShieldAlert },
   { href: "/admin/repeat-offenders", label: "Repeat Offenders", icon: Users },
   { href: "/admin/verifications", label: "Verifications", icon: BadgeCheck },
   { href: "/admin/admin-requests", label: "Admin Applications", icon: UserPlus },
