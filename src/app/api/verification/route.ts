@@ -46,7 +46,15 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, role: true, isVerified: true, verifiedAt: true },
+    select: {
+      id: true,
+      role: true,
+      isVerified: true,
+      verifiedAt: true,
+      ghanaCardNumber: true,
+      ghanaCardName: true,
+      residenceLocation: true,
+    },
   });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
@@ -67,6 +75,9 @@ export async function GET() {
     eligible: completedCount >= VERIFICATION_TRANSACTION_THRESHOLD,
     fee: getVerificationFee(user.role),
     latestRequest,
+    ghanaCardNumber: user.ghanaCardNumber,
+    ghanaCardName: user.ghanaCardName,
+    residenceLocation: user.residenceLocation,
   });
 }
 

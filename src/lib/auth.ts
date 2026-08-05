@@ -86,10 +86,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // instead of requiring the user to log out and back in.
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, isVerified: true, isIncidentTeam: true, verifiedAt: true },
+          select: { role: true, phone: true, isVerified: true, isIncidentTeam: true, verifiedAt: true },
         });
         if (dbUser) {
           token.role = dbUser.role;
+          token.phone = dbUser.phone;
           token.isVerified = dbUser.isVerified;
           token.isIncidentTeam = dbUser.isIncidentTeam;
           token.verifiedAt = dbUser.verifiedAt?.toISOString() ?? null;

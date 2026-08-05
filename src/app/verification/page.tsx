@@ -27,6 +27,9 @@ interface VerificationStatus {
   eligible: boolean;
   fee: number;
   latestRequest: VerificationRequest | null;
+  ghanaCardNumber: string | null;
+  ghanaCardName: string | null;
+  residenceLocation: string | null;
 }
 
 type Step = "status" | "form" | "submitting";
@@ -62,7 +65,12 @@ export default function VerificationPage() {
     setLoading(true);
     fetch("/api/verification")
       .then((r) => r.json())
-      .then(setStatus)
+      .then((data: VerificationStatus) => {
+        setStatus(data);
+        setGhanaCardNumber((prev) => prev || data.ghanaCardNumber || "");
+        setGhanaCardName((prev) => prev || data.ghanaCardName || "");
+        setResidenceLocation((prev) => prev || data.residenceLocation || "");
+      })
       .catch(() => setError("Failed to load verification status"))
       .finally(() => setLoading(false));
   }
@@ -245,6 +253,9 @@ export default function VerificationPage() {
                   <AlertCircle className="h-4 w-4 flex-shrink-0" /> {error}
                 </div>
               )}
+              <p className="text-xs text-[#1c3a13]/50">
+                Pre-filled from your account — update if anything&apos;s changed. What&apos;s actually new here is the card photo.
+              </p>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-[#1c3a13]">Ghana Card Number</label>
                 <input value={ghanaCardNumber} onChange={(e) => setGhanaCardNumber(e.target.value)}
