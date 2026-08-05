@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import {
   ArrowLeft,
   ShoppingCart,
@@ -13,7 +12,6 @@ import {
   AlertCircle,
   Truck,
   Store,
-  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -51,8 +49,6 @@ interface Listing {
 }
 
 export function OrderPageClient({ listingId }: { listingId: string }) {
-  const { data: session } = useSession();
-  const isVerified = !!session?.user?.isVerified;
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
@@ -300,22 +296,10 @@ export function OrderPageClient({ listingId }: { listingId: string }) {
               </div>
             )}
 
-            {!isVerified && (
-              <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-                <ShieldAlert className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <div>
-                  Verify your account before placing orders.{" "}
-                  <Link href="/verification" className="font-medium underline hover:no-underline">
-                    Apply for verification
-                  </Link>
-                </div>
-              </div>
-            )}
-
             <Button
               size="lg"
               className="w-full text-base"
-              disabled={!isActive || placing || !isVerified}
+              disabled={!isActive || placing}
               onClick={placeOrder}
             >
               {placing ? (

@@ -167,13 +167,6 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Logistics profile not found" }, { status: 404 });
   }
 
-  if (action === "accept" && !session.user.isVerified) {
-    return NextResponse.json(
-      { error: "Verify your account before accepting transport jobs" },
-      { status: 403 }
-    );
-  }
-
   // ── Rider rejects a PENDING request (stays PENDING for others) ────────────
   if (action === "reject") {
     await prisma.transportRequest.update({

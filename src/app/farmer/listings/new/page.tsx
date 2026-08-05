@@ -2,9 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { ArrowLeft, AlertCircle, CheckCircle, Upload, X, ImageIcon, ShieldAlert } from "lucide-react";
+import { ArrowLeft, AlertCircle, CheckCircle, Upload, X, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,8 +33,6 @@ interface FormState {
 
 export default function NewListingPage() {
   const router = useRouter();
-  const { data: session } = useSession();
-  const isVerified = !!session?.user?.isVerified;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -196,17 +193,6 @@ export default function NewListingPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
-            {!isVerified && (
-              <div className="flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-                <ShieldAlert className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <div>
-                  Verify your account before creating listings.{" "}
-                  <Link href="/verification" className="font-medium underline hover:no-underline">
-                    Apply for verification
-                  </Link>
-                </div>
-              </div>
-            )}
             {error && (
               <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -466,7 +452,7 @@ export default function NewListingPage() {
               <Button
                 type="submit"
                 className="flex-1 rounded-full bg-[#1c3a13] text-[#fcfcf7] hover:bg-[#2a5219]"
-                disabled={loading || uploading || !isVerified}
+                disabled={loading || uploading}
               >
                 {loading ? "Creating..." : form.status === "ACTIVE" ? "Publish Listing" : "Save Draft"}
               </Button>

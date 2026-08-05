@@ -533,6 +533,14 @@ model VerificationRequest {
   reviewNotes       String?
   reviewedById      String?
   reviewedAt        DateTime?
+  // Set only on the paid "fast track" path (skips the transaction-count
+  // wait) — null means this request came in free, via the activity
+  // threshold, and paymentStatus/paymentReference are irrelevant for it.
+  // Verification is never granted by payment alone: an admin still reviews
+  // every request regardless of how it got here (see status above).
+  feeAmount         Float?
+  paymentStatus     PaymentStatus  @default(UNPAID)
+  paymentReference  String?        @unique
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   user              User           @relation("VerificationApplicant", fields: [userId], references: [id], onDelete: Cascade)

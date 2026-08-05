@@ -92,12 +92,6 @@ export async function POST(req: NextRequest) {
   if (!session || session.user.role !== "FARMER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!session.user.isVerified) {
-    return NextResponse.json(
-      { error: "Verify your account before creating listings" },
-      { status: 403 }
-    );
-  }
 
   try {
     const body = await req.json();

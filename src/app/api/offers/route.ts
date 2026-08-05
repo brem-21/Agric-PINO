@@ -60,9 +60,6 @@ export async function POST(req: NextRequest) {
   if (session.user.role !== "BUYER") {
     return NextResponse.json({ error: "Only buyers can make offers" }, { status: 403 });
   }
-  if (!session.user.isVerified) {
-    return NextResponse.json({ error: "Verify your account before making offers" }, { status: 403 });
-  }
 
   try {
     const body = await req.json();

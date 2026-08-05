@@ -51,6 +51,10 @@ export async function GET(req: NextRequest) {
 
   const where = {
     ...(status && { status: status as never }),
+    // An unpaid fast-track application isn't actually reviewable yet — don't
+    // surface it to admins until its payment clears (see /api/verification's
+    // ?action=verify).
+    OR: [{ feeAmount: null }, { paymentStatus: "PAID" as never }],
   };
 
   const [requests, total] = await Promise.all([

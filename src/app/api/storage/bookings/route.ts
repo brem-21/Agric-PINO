@@ -43,9 +43,6 @@ export async function POST(req: NextRequest) {
   if (!session || session.user.role !== "FARMER") {
     return NextResponse.json({ error: "Only farmers can book a drop-off" }, { status: 401 });
   }
-  if (!session.user.isVerified) {
-    return NextResponse.json({ error: "Verify your account before booking storage" }, { status: 403 });
-  }
 
   try {
     const data = bookingSchema.parse(await req.json());

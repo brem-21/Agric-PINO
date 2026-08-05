@@ -67,12 +67,6 @@ export async function POST(req: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Sign in to place orders" }, { status: 401 });
   }
-  if (!session.user.isVerified) {
-    return NextResponse.json(
-      { error: "Verify your account before placing orders" },
-      { status: 403 }
-    );
-  }
 
   try {
     let body: unknown;

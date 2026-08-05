@@ -1,17 +1,33 @@
 import { prisma } from "@/lib/prisma";
 
-// Verification used to be a paid tier; it isn't anymore. Instead, an account
-// becomes *eligible* for (free) verification once it's been part of this many
-// completed transactions — activity is the trust signal instead of money. An
-// admin still has to approve it (see src/app/api/admin/verifications/route.ts's
-// "eligible" view) — this only unlocks the ability to apply.
+// An account becomes *eligible* to apply for (free) verification once it's
+// been part of this many completed transactions — activity is the trust
+// signal. Anyone who doesn't want to wait can instead pay a flat fee (see
+// VERIFICATION_FEES) to unlock the ability to apply immediately — but paying
+// only buys the ability to apply sooner, not the badge itself: an admin
+// still reviews the Ghana Card photo and approves/rejects either path
+// exactly the same way (see src/app/api/admin/verifications/route.ts).
 export const VERIFICATION_TRANSACTION_THRESHOLD = 10;
+
+// Note: verification itself no longer gates any action on the platform
+// (listing, ordering, accepting jobs, booking storage, making offers all
+// work for unverified accounts) — it's a trust badge, not a functional lock.
+export const VERIFICATION_FEES: Record<string, number> = {
+  FARMER: 50,
+  STORAGE_FACILITY: 50,
+  LOGISTICS: 30,
+  BUYER: 10,
+};
 
 // ADMIN has no verification tier — every other role does.
 export const VERIFICATION_APPLICABLE_ROLES = ["FARMER", "BUYER", "LOGISTICS", "STORAGE_FACILITY"] as const;
 
 export function isVerificationApplicableRole(role: string): boolean {
   return (VERIFICATION_APPLICABLE_ROLES as readonly string[]).includes(role);
+}
+
+export function getVerificationFee(role: string): number {
+  return VERIFICATION_FEES[role] ?? 0;
 }
 
 /**

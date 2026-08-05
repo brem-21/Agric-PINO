@@ -15,6 +15,8 @@ interface VerificationRequest {
   status: "PENDING" | "APPROVED" | "REJECTED";
   reviewNotes: string | null;
   createdAt: string;
+  feeAmount: number | null;
+  paymentStatus: "UNPAID" | "PAID" | "REFUNDED";
 }
 
 interface VerificationStatus {
@@ -23,6 +25,7 @@ interface VerificationStatus {
   completedCount: number;
   threshold: number;
   eligible: boolean;
+  fee: number;
   latestRequest: VerificationRequest | null;
 }
 
@@ -81,11 +84,36 @@ export default function VerificationPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Submission failed"); setStep("form"); return; }
+
+      // Not yet eligible for the free path — the request was created UNPAID
+      // and needs the fast-track fee paid before an admin will see it.
+      if (data.authorizationUrl) {
+        window.location.href = data.authorizationUrl;
+        return;
+      }
+
       loadStatus();
       setStep("status");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error. Please try again.");
       setStep("form");
+    }
+  }
+
+  const [resumingPayment, setResumingPayment] = useState(false);
+
+  async function handleResumePayment() {
+    setError("");
+    setResumingPayment(true);
+    try {
+      const res = await fetch("/api/verification", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const data = await res.json();
+      if (!res.ok || !data.authorizationUrl) { setError(data.error ?? "Could not start payment"); return; }
+      window.location.href = data.authorizationUrl;
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setResumingPayment(false);
     }
   }
 
@@ -98,7 +126,9 @@ export default function VerificationPage() {
   }
 
   const latest = status.latestRequest;
-  const canApply = !status.isVerified && status.eligible && (!latest || latest.status === "REJECTED");
+  const noBlockingRequest = !latest || latest.status === "REJECTED";
+  const canApplyFree = !status.isVerified && status.eligible && noBlockingRequest;
+  const canApplyPaid = !status.isVerified && !status.eligible && noBlockingRequest;
 
   return (
     <div className="min-h-screen bg-[#fcfcf7] py-8 px-4">
@@ -115,7 +145,7 @@ export default function VerificationPage() {
             <h1 className="text-xl font-light tracking-tight text-[#1c3a13]">Identity Verification</h1>
           </div>
           <p className="text-sm text-[#1c3a13]/50">
-            Free — no fee involved. Verification is unlocked by activity on the platform, and every application is reviewed by an admin.
+            Verification is a trust badge, not a requirement — you already have full access to list, order, and transact either way. Wait for it to unlock for free through activity on the platform, or pay a one-time fee to apply right away. Every application is reviewed by an admin either way.
           </p>
 
           {step === "status" && (
@@ -127,6 +157,25 @@ export default function VerificationPage() {
                     <p className="font-medium text-[#1c3a13]">You&apos;re verified</p>
                     {status.verifiedAt && <p className="text-xs text-[#1c3a13]/70">Since {formatDate(status.verifiedAt)}</p>}
                   </div>
+                </div>
+              ) : latest?.status === "PENDING" && latest.feeAmount != null && latest.paymentStatus === "UNPAID" ? (
+                <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-6 w-6 text-amber-700 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-amber-900">Payment pending</p>
+                      <p className="text-xs text-amber-700">
+                        Started {formatDate(latest.createdAt)} — pay GHS {latest.feeAmount} to send this for admin review.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleResumePayment}
+                    disabled={resumingPayment}
+                    className="w-full bg-[#1c3a13] text-[#fcfcf7] rounded-full hover:bg-[#2a5219]"
+                  >
+                    {resumingPayment ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Starting payment…</> : `Pay GHS ${latest.feeAmount} now`}
+                  </Button>
                 </div>
               ) : latest?.status === "PENDING" ? (
                 <div className="flex items-center gap-3 rounded-xl bg-[#eeeee9] p-4">
@@ -164,15 +213,27 @@ export default function VerificationPage() {
                     />
                   </div>
                   <p className="text-xs text-[#1c3a13]/50">
-                    {status.threshold - status.completedCount} more completed transaction(s) to unlock verification.
+                    {status.threshold - status.completedCount} more completed transaction(s) to unlock free verification —
+                    or skip the wait for a one-time GHS {status.fee} fee.
                   </p>
                 </div>
               )}
 
-              {canApply && (
+              {canApplyFree && (
                 <Button onClick={() => setStep("form")} className="w-full bg-[#1c3a13] text-[#fcfcf7] rounded-full hover:bg-[#2a5219]">
                   {latest?.status === "REJECTED" ? "Apply Again" : "Apply for Verification"}
                 </Button>
+              )}
+
+              {canApplyPaid && (
+                <div className="space-y-2">
+                  <Button onClick={() => setStep("form")} className="w-full bg-[#1c3a13] text-[#fcfcf7] rounded-full hover:bg-[#2a5219]">
+                    {latest?.status === "REJECTED" ? `Apply Again — Pay GHS ${status.fee}` : `Apply Now — Pay GHS ${status.fee}`}
+                  </Button>
+                  <p className="text-center text-xs text-[#1c3a13]/40">
+                    Or keep transacting — verification unlocks free once you hit {status.threshold} completed transactions.
+                  </p>
+                </div>
               )}
             </div>
           )}
@@ -231,7 +292,9 @@ export default function VerificationPage() {
                   Back
                 </Button>
                 <Button onClick={handleSubmit} disabled={step === "submitting"} className="flex-1 bg-[#1c3a13] text-[#fcfcf7] rounded-full hover:bg-[#2a5219]">
-                  {step === "submitting" ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Submitting…</> : "Submit"}
+                  {step === "submitting"
+                    ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />{status.eligible ? "Submitting…" : "Starting payment…"}</>
+                    : status.eligible ? "Submit" : `Continue to Pay GHS ${status.fee}`}
                 </Button>
               </div>
             </div>

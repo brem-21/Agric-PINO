@@ -9,15 +9,22 @@ function CallbackContent() {
   const params = useSearchParams();
   const router = useRouter();
   const [state, setState] = useState<"checking" | "success" | "failed">("checking");
-  const isTransport = params.get("type") === "transport";
+  const type = params.get("type");
+  const isTransport = type === "transport";
+  const isVerification = type === "verification";
   const orderId = params.get("orderId");
-  const destination = isTransport ? "/farmer/transport" : orderId ? `/tracking/${orderId}` : "/";
+  const destination = isVerification ? "/verification" : isTransport ? "/farmer/transport" : orderId ? `/tracking/${orderId}` : "/";
+  const verifyEndpoint = isVerification
+    ? "/api/verification?action=verify"
+    : isTransport
+      ? "/api/transport/payment?action=verify"
+      : "/api/payments?action=verify";
 
   useEffect(() => {
     const reference = params.get("reference") ?? params.get("trxref");
     if (!reference) { setState("failed"); return; }
 
-    fetch(isTransport ? "/api/transport/payment?action=verify" : "/api/payments?action=verify", {
+    fetch(verifyEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reference }),
@@ -25,7 +32,7 @@ function CallbackContent() {
       .then((r) => r.json())
       .then((d) => setState(d.status === "success" ? "success" : "failed"))
       .catch(() => setState("failed"));
-  }, [params, isTransport]);
+  }, [params, verifyEndpoint]);
 
   return (
     <div className="min-h-screen bg-[#fcfcf7] flex items-center justify-center p-4">
@@ -43,10 +50,14 @@ function CallbackContent() {
             </div>
             <p className="font-medium text-[#1c3a13]">Payment received</p>
             <p className="text-sm text-[#1c3a13]/50">
-              {isTransport ? "The delivery payment has been confirmed." : "Your order has been confirmed."}
+              {isVerification
+                ? "Your verification application has been sent to an admin for review."
+                : isTransport
+                  ? "The delivery payment has been confirmed."
+                  : "Your order has been confirmed."}
             </p>
             <Button onClick={() => router.push(destination)} className="w-full bg-[#1c3a13] text-[#fcfcf7] rounded-full hover:bg-[#2a5219]">
-              {isTransport ? "Back to Transport" : "Track Order"}
+              {isVerification ? "Back to Verification" : isTransport ? "Back to Transport" : "Track Order"}
             </Button>
           </>
         )}
@@ -58,7 +69,7 @@ function CallbackContent() {
             <p className="font-medium text-[#1c3a13]">Payment not confirmed</p>
             <p className="text-sm text-[#1c3a13]/50">We couldn&apos;t confirm your payment. If money was deducted, contact support — otherwise, try again.</p>
             <Button onClick={() => router.push(destination)} variant="outline" className="w-full rounded-full border-[#eeeee9] text-[#1c3a13]">
-              {isTransport ? "Back to Transport" : "Back to Order"}
+              {isVerification ? "Back to Verification" : isTransport ? "Back to Transport" : "Back to Order"}
             </Button>
           </>
         )}

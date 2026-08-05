@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Calendar, Package, Truck, Loader2, RefreshCw, CheckCircle, XCircle, RotateCcw, DollarSign, Weight, User, Map as MapIcon, ShieldAlert } from "lucide-react";
+import { MapPin, Calendar, Package, Truck, Loader2, RefreshCw, CheckCircle, XCircle, RotateCcw, DollarSign, Weight, User, Map as MapIcon } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { DeliveryMap } from "@/components/shared/delivery-map";
 
@@ -41,8 +39,6 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function LogisticsRequestsPage() {
-  const { data: session } = useSession();
-  const isVerified = !!session?.user?.isVerified;
   const [requests, setRequests] = useState<TransportReqItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
@@ -224,8 +220,7 @@ export default function LogisticsRequestsPage() {
               <>
                 <button
                   onClick={() => openAcceptDialog(req.id)}
-                  disabled={!!acting || !isVerified}
-                  title={!isVerified ? "Verify your account to accept jobs" : undefined}
+                  disabled={!!acting}
                   className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 bg-[#1c3a13] text-[#fcfcf7] hover:bg-[#2a5219]"
                 >
                   <CheckCircle className="h-3.5 w-3.5" />
@@ -324,17 +319,6 @@ export default function LogisticsRequestsPage() {
                 Cancel
               </button>
             </div>
-          </div>
-        </div>
-      )}
-      {!isVerified && (
-        <div className="flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
-          <ShieldAlert className="h-4 w-4 flex-shrink-0 mt-0.5" />
-          <div>
-            Verify your account before accepting transport jobs.{" "}
-            <Link href="/verification" className="font-medium underline hover:no-underline">
-              Apply for verification
-            </Link>
           </div>
         </div>
       )}
