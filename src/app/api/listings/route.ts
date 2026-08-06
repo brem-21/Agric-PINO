@@ -115,10 +115,10 @@ export async function POST(req: NextRequest) {
       where: { targetUserId: session.user.id, status: { in: ["OPEN", "UNDER_REVIEW"] } },
     });
 
-    // Verification (required to list at all — checked above) plus a clean
-    // complaint record and a sane price is "low risk enough" to skip the
-    // manual queue; anything else still needs a human, but now the human is
-    // only looking at listings that actually warrant a second look.
+    // No identity verification is required to list at all — a clean
+    // complaint record and a sane price alone are "low risk enough" to skip
+    // the manual queue; anything else still needs a human, but now the human
+    // is only looking at listings that actually warrant a second look.
     const autoApprove = !anomaly.flagged && openComplaints === 0;
 
     const approvalNotes = anomaly.flagged

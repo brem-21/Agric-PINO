@@ -1,13 +1,13 @@
 // Auto-approval + price-anomaly detection for new produce listings.
 //
-// A verified farmer's listing (verification is already required to list at
-// all — see POST /api/listings) auto-publishes immediately unless the price
-// is a statistical outlier for its category or the farmer has an open
-// complaint against them — in which case it's routed to manual review
-// instead of sitting in the same queue as every routine listing. This keeps
-// the review queue proportional to actual risk instead of every listing,
-// which matters because produce spoils in hours-to-days, not the days a
-// manual queue can otherwise take to clear.
+// Listing doesn't require identity verification — any Farmer account can list
+// (see POST /api/listings) — but a new listing auto-publishes immediately
+// only if its price isn't a statistical outlier for its category and the
+// farmer has no open complaint against them; otherwise it's routed to manual
+// review instead of sitting in the same queue as every routine listing. This
+// keeps the review queue proportional to actual risk instead of every
+// listing, which matters because produce spoils in hours-to-days, not the
+// days a manual queue can otherwise take to clear.
 
 // Below this many comparable listings, a "median" isn't a meaningful signal
 // yet (e.g. a brand-new crop category) — skip the anomaly check rather than
