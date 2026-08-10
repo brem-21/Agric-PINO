@@ -130,7 +130,7 @@ export function getAgricultureAdvice(weather: WeatherData): string {
     return "Hot and humid — ideal for fungal disease. Monitor crops closely and ensure good ventilation.";
   }
   if (uvIndex > 8) {
-    return "Very high UV. Harvest tomatoes and peppers in the morning for best quality.";
+    return "Very high UV. Harvest tomatoes in the morning for best quality.";
   }
   if (humidity < 30) {
     return "Very dry conditions. Increase irrigation frequency to prevent wilting.";

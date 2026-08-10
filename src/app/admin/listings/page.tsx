@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 const CATEGORY_EMOJI: Record<string, string> = {
-  VEGETABLES: "🥦", GRAINS: "🌾", TUBERS: "🍠", FRUITS: "🍎", LEGUMES: "🫘", LIVESTOCK: "🐄",
+  VEGETABLES: "🥦", TUBERS: "🍠", FRUITS: "🍎",
 };
 
 const APPROVAL_BADGE: Record<string, string> = {

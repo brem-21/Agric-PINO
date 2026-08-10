@@ -781,13 +781,12 @@ enum VehicleType {
   TRUCK
 }
 
+// Deliberately narrow — this platform is scoped to Tomatoes, Yam, and Fruits
+// (see the scope statement in README.md), not a general produce marketplace.
 enum ProduceCategory {
   VEGETABLES
-  GRAINS
   TUBERS
   FRUITS
-  LEGUMES
-  LIVESTOCK
 }
 
 enum ListingStatus {

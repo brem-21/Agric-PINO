@@ -8,11 +8,8 @@ import { Button } from "@/components/ui/button";
 
 const CATEGORY_EMOJI: Record<string, string> = {
   VEGETABLES: "🥦",
-  GRAINS: "🌾",
   TUBERS: "🍠",
   FRUITS: "🍎",
-  LEGUMES: "🫘",
-  LIVESTOCK: "🐄",
 };
 
 const STATUS_STYLES: Record<string, string> = {

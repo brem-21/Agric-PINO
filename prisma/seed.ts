@@ -51,7 +51,7 @@ async function main() {
         create: {
           farmName: "Mensah Farms",
           farmSize: 4.5,
-          description: "Family farm growing tomatoes and garden eggs since 1995",
+          description: "Family farm growing tomatoes since 1995",
           location: "Tamale, Northern Region",
           latitude: 9.4008,
           longitude: -0.8393,
@@ -81,7 +81,7 @@ async function main() {
         create: {
           farmName: "Issahaku Vegetable Garden",
           farmSize: 2.0,
-          description: "Specializing in okra, peppers and leafy greens",
+          description: "Specializing in tomatoes for the Bolgatanga market",
           location: "Bolgatanga, Upper East Region",
           latitude: 10.7856,
           longitude: -0.8494,
@@ -110,7 +110,7 @@ async function main() {
         create: {
           farmName: "Alhassan Yam Farm",
           farmSize: 8.0,
-          description: "Large-scale yam and sorghum production in Wa",
+          description: "Large-scale yam and pineapple production in Wa",
           location: "Wa, Upper West Region",
           latitude: 10.0608,
           longitude: -2.5012,
@@ -301,7 +301,7 @@ async function main() {
   });
 
   // 5th rider — registered with a truck, for hauling larger consignments
-  // (grain, yams) that a motorbike can't carry.
+  // (yams, bulk fruit) that a motorbike can't carry.
   await prisma.user.upsert({
     where: { phone: "0244000024" },
     update: { lastSeen: online, latitude: 9.4200, longitude: -0.8300 },
@@ -343,9 +343,9 @@ async function main() {
   const existingDemoListings = await prisma.produceListing.findMany({
     where: {
       OR: [
-        { farmerId: farmer1.id, cropType: { in: ["Tomatoes", "Garden Eggs"] } },
-        { farmerId: farmer2.id, cropType: { in: ["Okra", "Peppers"] } },
-        { farmerId: farmer3.id, cropType: { in: ["Yams", "Sorghum"] } },
+        { farmerId: farmer1.id, cropType: { in: ["Tomatoes", "Watermelons"] } },
+        { farmerId: farmer2.id, cropType: { in: ["Mangoes", "Oranges"] } },
+        { farmerId: farmer3.id, cropType: { in: ["Yams", "Pineapples"] } },
       ],
     },
     select: { farmerId: true, cropType: true },
@@ -377,15 +377,15 @@ async function main() {
       },
       {
         farmerId: farmer1.id,
-        cropType: "Garden Eggs",
-        category: "VEGETABLES",
+        cropType: "Watermelons",
+        category: "FRUITS",
         quantity: 200,
         unit: "kg",
         pricePerUnit: 9,
         currency: "GHS",
-        description: "White garden eggs, fresh from the farm",
+        description: "Sweet, ripe watermelons, fresh from the farm",
         images: [
-          "https://images.unsplash.com/photo-1690487966073-f2ba29a7eb7c?w=800&q=80",
+          "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=800&q=80",
         ],
         harvestDate: daysAgo(10),
         expiryDate: daysFromNow(20),
@@ -396,15 +396,15 @@ async function main() {
       },
       {
         farmerId: farmer2.id,
-        cropType: "Okra",
-        category: "VEGETABLES",
+        cropType: "Mangoes",
+        category: "FRUITS",
         quantity: 300,
         unit: "kg",
         pricePerUnit: 10,
         currency: "GHS",
-        description: "Tender young okra, perfect for soups and stews",
+        description: "Sweet, juicy mangoes, perfect for the market",
         images: [
-          "https://images.unsplash.com/photo-1759860002366-0d8dd828742c?w=800&q=80",
+          "https://images.unsplash.com/photo-1553279768-865429fa0078?w=800&q=80",
 
         ],
         harvestDate: daysAgo(8),
@@ -416,15 +416,15 @@ async function main() {
       },
       {
         farmerId: farmer2.id,
-        cropType: "Peppers",
-        category: "VEGETABLES",
+        cropType: "Oranges",
+        category: "FRUITS",
         quantity: 150,
         unit: "kg",
         pricePerUnit: 15,
         currency: "GHS",
-        description: "Hot shito peppers and long green peppers available",
+        description: "Fresh, juicy oranges available",
         images: [
-          "https://images.unsplash.com/photo-1601648764658-cf37e8c89b70?w=800&q=80",
+          "https://images.unsplash.com/photo-1547514701-42782101795e?w=800&q=80",
 
         ],
         harvestDate: daysAgo(9),
@@ -456,15 +456,15 @@ async function main() {
       },
       {
         farmerId: farmer3.id,
-        cropType: "Sorghum",
-        category: "GRAINS",
+        cropType: "Pineapples",
+        category: "FRUITS",
         quantity: 5000,
         unit: "kg",
         pricePerUnit: 3.5,
         currency: "GHS",
-        description: "Dry season sorghum, excellent quality",
+        description: "Sweet, ripe pineapples, excellent quality",
         images: [
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Guinea_corn_at_monday_market_kaduna_state_01.jpg/960px-Guinea_corn_at_monday_market_kaduna_state_01.jpg",
+          "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=800&q=80",
         ],
         harvestDate: daysAgo(45),
         expiryDate: daysFromNow(180),
@@ -485,11 +485,11 @@ async function main() {
   // Patch images on existing produce listings (createMany skipDuplicates won't update them)
   const listingImageMap: [string, string, string[]][] = [
     [farmer1.id, "Tomatoes", ["https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=800&q=80"]],
-    [farmer1.id, "Garden Eggs", ["https://images.unsplash.com/photo-1690487966073-f2ba29a7eb7c?w=800&q=80"]],
-    [farmer2.id, "Okra", ["https://images.unsplash.com/photo-1759860002366-0d8dd828742c?w=800&q=80"]],
-    [farmer2.id, "Peppers", ["https://images.unsplash.com/photo-1601648764658-cf37e8c89b70?w=800&q=80"]],
+    [farmer1.id, "Watermelons", ["https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=800&q=80"]],
+    [farmer2.id, "Mangoes", ["https://images.unsplash.com/photo-1553279768-865429fa0078?w=800&q=80"]],
+    [farmer2.id, "Oranges", ["https://images.unsplash.com/photo-1547514701-42782101795e?w=800&q=80"]],
     [farmer3.id, "Yams", ["https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Yam_at_monday_market_kaduna_state_01.jpg/960px-Yam_at_monday_market_kaduna_state_01.jpg"]],
-    [farmer3.id, "Sorghum", ["https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Guinea_corn_at_monday_market_kaduna_state_01.jpg/960px-Guinea_corn_at_monday_market_kaduna_state_01.jpg"]],
+    [farmer3.id, "Pineapples", ["https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=800&q=80"]],
   ];
   for (const [farmerId, cropType, images] of listingImageMap) {
     await prisma.produceListing.updateMany({ where: { farmerId, cropType }, data: { images } });
@@ -539,8 +539,8 @@ async function main() {
     },
   });
 
-  // ── Storage Facility 2: Tamale Grain Reserve (Northern Region) ────────────
-  // Hermetic/dry (PICS-bag style) storage for grains and legumes.
+  // ── Storage Facility 2: Tamale Fresh Produce Store (Northern Region) ──────
+  // Cold-chain storage for fruits, vegetables, and tubers.
   const facility2 = await prisma.user.upsert({
     where: { phone: "0244000031" },
     update: {},
@@ -561,14 +561,14 @@ async function main() {
       lastSeen: online,
       storageFacilityProfile: {
         create: {
-          name: "Tamale Grain Reserve",
-          description: "Hermetic dry storage (PICS-bag style) for grains and legumes across Northern Region.",
+          name: "Tamale Fresh Produce Store",
+          description: "Cold-chain storage for fruits, vegetables, and tubers across Northern Region.",
           location: "Tamale, Northern Region",
           latitude: 9.4075,
           longitude: -0.8533,
-          storageTypes: ["HERMETIC_DRY"],
+          storageTypes: ["COLD_CHAIN"],
           capacityTonnes: 120,
-          acceptedCategories: ["GRAINS", "LEGUMES", "TUBERS"],
+          acceptedCategories: ["VEGETABLES", "TUBERS", "FRUITS"],
           operatingHours: "Mon–Fri 8am–5pm",
           approvalStatus: "APPROVED",
           rating: 4.4,
@@ -628,18 +628,18 @@ async function main() {
     });
   }
 
-  // Demo booking 2: Yakubu's sorghum confirmed for drop-off at the grain
-  // reserve but not yet delivered — the earlier, CONFIRMED stage of the pipeline.
+  // Demo booking 2: Yakubu's pineapples confirmed for drop-off at the fresh
+  // produce store but not yet delivered — the earlier, CONFIRMED stage of the pipeline.
   const existingConfirmedBooking = await prisma.storageBooking.findFirst({
-    where: { facilityId: tamaleFacility.id, farmerId: farmer3.id, cropType: "Sorghum" },
+    where: { facilityId: tamaleFacility.id, farmerId: farmer3.id, cropType: "Pineapples" },
   });
   if (!existingConfirmedBooking) {
     await prisma.storageBooking.create({
       data: {
         facilityId: tamaleFacility.id,
         farmerId: farmer3.id,
-        cropType: "Sorghum",
-        category: "GRAINS",
+        cropType: "Pineapples",
+        category: "FRUITS",
         quantity: 1000,
         unit: "kg",
         pricePerUnit: 3.5,
@@ -672,13 +672,13 @@ async function main() {
       storageFacilityProfile: {
         create: {
           name: "Wa Community Store",
-          description: "Community-run dry storage for tubers and grains in Wa.",
+          description: "Community-run dry storage for tubers and fruits in Wa.",
           location: "Wa, Upper West Region",
           latitude: 10.0580,
           longitude: -2.5040,
           storageTypes: ["HERMETIC_DRY"],
           capacityTonnes: 25,
-          acceptedCategories: ["TUBERS", "GRAINS"],
+          acceptedCategories: ["TUBERS", "FRUITS"],
           operatingHours: "Mon–Sat 8am–5pm",
           approvalStatus: "APPROVED",
           rating: 0,
@@ -979,8 +979,8 @@ Demo accounts (password: password123):
   Rider 5:    0244000024  (Iddrisu Baba — ONLINE, Tamale — TRUCK)
   Storage 1:  0244000030  (Kwame Darko — Bolgatanga Cold Storage, Upper East)
                            Amina's tomatoes are already dropped off & listed here
-  Storage 2:  0244000031  (Abena Fordjour — Tamale Grain Reserve, Northern)
-                           Yakubu's sorghum has a CONFIRMED drop-off booking here
+  Storage 2:  0244000031  (Abena Fordjour — Tamale Fresh Produce Store, Northern)
+                           Yakubu's pineapples have a CONFIRMED drop-off booking here
   Storage 3:  0244000032  (Salifu Baako — Wa Community Store — verification eligible)
   Buyer 3:    0244000040  (Salamatu Yahaya — PENDING Incident Team application)
   Admin:      0244000099  (Lorgric Admin)

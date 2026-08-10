@@ -20,11 +20,8 @@ import { PaymentChoicePanel } from "@/components/shared/payment-choice-panel";
 
 const CATEGORY_EMOJI: Record<string, string> = {
   VEGETABLES: "🥦",
-  GRAINS: "🌾",
   TUBERS: "🍠",
   FRUITS: "🍎",
-  LEGUMES: "🫘",
-  LIVESTOCK: "🐄",
 };
 
 interface Listing {

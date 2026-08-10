@@ -12,7 +12,7 @@ const profileSchema = z.object({
   storageTypes: z.array(z.enum(["COLD_CHAIN", "HERMETIC_DRY"])).min(1),
   capacityTonnes: z.number().positive().optional(),
   acceptedCategories: z
-    .array(z.enum(["VEGETABLES", "GRAINS", "TUBERS", "FRUITS", "LEGUMES", "LIVESTOCK"]))
+    .array(z.enum(["VEGETABLES", "TUBERS", "FRUITS"]))
     .min(1),
   equipment: z
     .array(

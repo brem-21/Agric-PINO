@@ -12,11 +12,8 @@ import { ProductImageSlideshow } from "@/components/shared/product-image-slidesh
 
 type ProduceCategory =
   | "VEGETABLES"
-  | "GRAINS"
   | "TUBERS"
   | "FRUITS"
-  | "LEGUMES"
-  | "LIVESTOCK"
 
 type ListingStatus = "ACTIVE" | "SOLD" | "EXPIRED" | "DRAFT"
 
@@ -59,20 +56,14 @@ export interface ProduceListing {
 
 const CATEGORY_EMOJI: Record<ProduceCategory, string> = {
   VEGETABLES: "🥦",
-  GRAINS: "🌾",
   TUBERS: "🍠",
   FRUITS: "🍎",
-  LEGUMES: "🫘",
-  LIVESTOCK: "🐄",
 }
 
 const CATEGORY_LABEL: Record<ProduceCategory, string> = {
   VEGETABLES: "Vegetables",
-  GRAINS: "Grains",
   TUBERS: "Tubers",
   FRUITS: "Fruits",
-  LEGUMES: "Legumes",
-  LIVESTOCK: "Livestock",
 }
 
 const CATEGORY_BADGE_VARIANT: Record<
@@ -80,11 +71,8 @@ const CATEGORY_BADGE_VARIANT: Record<
   "default" | "secondary" | "warning" | "success" | "destructive" | "outline"
 > = {
   VEGETABLES: "success",
-  GRAINS: "warning",
   TUBERS: "secondary",
   FRUITS: "default",
-  LEGUMES: "outline",
-  LIVESTOCK: "destructive",
 }
 
 function formatDate(date?: Date | string | null): string {

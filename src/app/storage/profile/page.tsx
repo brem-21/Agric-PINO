@@ -11,8 +11,8 @@ import { Loader2, LocateFixed, Map, CheckCircle, AlertCircle } from "lucide-reac
 import { PRODUCE_CATEGORIES, STORAGE_EQUIPMENT } from "@/lib/utils";
 
 const STORAGE_TYPES = [
-  { value: "COLD_CHAIN", label: "Cold Chain (refrigerated)", hint: "Best for tomatoes, mangoes, watermelons, leafy vegetables" },
-  { value: "HERMETIC_DRY", label: "Hermetic / Dry Storage (PICS-bag style)", hint: "Best for maize, sorghum, millet, rice, cowpea, soybean, groundnut" },
+  { value: "COLD_CHAIN", label: "Cold Chain (refrigerated)", hint: "Best for tomatoes and fresh fruit" },
+  { value: "HERMETIC_DRY", label: "Hermetic / Dry Storage (PICS-bag style)", hint: "Best for yam and other tubers" },
 ];
 
 interface Facility {

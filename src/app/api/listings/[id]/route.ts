@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
+import { isCropAllowedForCategory } from "@/lib/utils";
 
 const updateSchema = z.object({
   cropType: z.string().min(1).optional(),
-  category: z.enum(["VEGETABLES", "GRAINS", "TUBERS", "FRUITS", "LEGUMES", "LIVESTOCK"]).optional(),
+  category: z.enum(["VEGETABLES", "TUBERS", "FRUITS"]).optional(),
   quantity: z.number().positive().max(1_000_000, "Quantity seems unrealistically high").optional(),
   unit: z.string().min(1).optional(),
   pricePerUnit: z.number().positive().max(100_000, "Price per unit seems unrealistically high").optional(),
@@ -78,6 +79,20 @@ export async function PATCH(
   try {
     const body = await req.json();
     const data = updateSchema.parse(body);
+
+    // Only enforce the crop/category scope when one of them is actually being
+    // changed — an unrelated edit (price, quantity...) on a listing that
+    // predates this restriction shouldn't get blocked by it.
+    if (data.category !== undefined || data.cropType !== undefined) {
+      const mergedCategory = data.category ?? existing.category;
+      const mergedCropType = data.cropType ?? existing.cropType;
+      if (!isCropAllowedForCategory(mergedCategory, mergedCropType)) {
+        return NextResponse.json(
+          { error: `${mergedCategory} listings are limited to Tomato (Vegetables) or Yam (Tubers) right now — Fruits can be any crop.` },
+          { status: 400 }
+        );
+      }
+    }
 
     const listing = await prisma.produceListing.update({
       where: { id },

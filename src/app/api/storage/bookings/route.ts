@@ -3,11 +3,12 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyParties } from "@/lib/notify";
+import { isCropAllowedForCategory } from "@/lib/utils";
 
 const bookingSchema = z.object({
   facilityId: z.string(),
   cropType: z.string().min(1),
-  category: z.enum(["VEGETABLES", "GRAINS", "TUBERS", "FRUITS", "LEGUMES", "LIVESTOCK"]),
+  category: z.enum(["VEGETABLES", "TUBERS", "FRUITS"]),
   quantity: z.number().positive(),
   unit: z.string().min(1),
   pricePerUnit: z.number().positive(),
@@ -46,6 +47,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const data = bookingSchema.parse(await req.json());
+
+    if (!isCropAllowedForCategory(data.category, data.cropType)) {
+      return NextResponse.json(
+        { error: `${data.category} bookings are limited to Tomato (Vegetables) or Yam (Tubers) right now — Fruits can be any crop.` },
+        { status: 400 }
+      );
+    }
 
     const facility = await prisma.storageFacilityProfile.findUnique({ where: { id: data.facilityId } });
     if (!facility || facility.approvalStatus !== "APPROVED") {

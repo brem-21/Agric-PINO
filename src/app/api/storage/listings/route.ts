@@ -6,7 +6,7 @@ import { z } from "zod";
 const facilityListingSchema = z.object({
   farmerId: z.string(),
   cropType: z.string().min(1),
-  category: z.enum(["VEGETABLES", "GRAINS", "TUBERS", "FRUITS", "LEGUMES", "LIVESTOCK"]),
+  category: z.enum(["VEGETABLES", "TUBERS", "FRUITS"]),
   quantity: z.number().positive().max(1_000_000, "Quantity seems unrealistically high"),
   unit: z.string().min(1),
   pricePerUnit: z.number().positive().max(100_000, "Price per unit seems unrealistically high"),

@@ -62,20 +62,14 @@ interface Pagination {
 
 const CATEGORY_EMOJI: Record<string, string> = {
   VEGETABLES: "🥦",
-  GRAINS: "🌾",
   TUBERS: "🍠",
   FRUITS: "🍎",
-  LEGUMES: "🫘",
-  LIVESTOCK: "🐄",
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
   VEGETABLES: "Vegetables",
-  GRAINS: "Grains",
   TUBERS: "Tubers",
   FRUITS: "Fruits",
-  LEGUMES: "Legumes",
-  LIVESTOCK: "Livestock",
 };
 
 function SkeletonCard() {

@@ -4,10 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import type { ProduceCategory, ListingStatus } from "@prisma/client";
 import { checkPriceAnomaly } from "@/lib/listing-moderation";
+import { isCropAllowedForCategory } from "@/lib/utils";
 
 const listingSchema = z.object({
   cropType: z.string().min(1),
-  category: z.enum(["VEGETABLES", "GRAINS", "TUBERS", "FRUITS", "LEGUMES", "LIVESTOCK"]),
+  category: z.enum(["VEGETABLES", "TUBERS", "FRUITS"]),
   quantity: z.number().positive().max(1_000_000, "Quantity seems unrealistically high"),
   unit: z.string().min(1),
   pricePerUnit: z.number().positive().max(100_000, "Price per unit seems unrealistically high"),
@@ -101,6 +102,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const data = listingSchema.parse(body);
+
+    if (!isCropAllowedForCategory(data.category, data.cropType)) {
+      return NextResponse.json(
+        { error: `${data.category} listings are limited to Tomato (Vegetables) or Yam (Tubers) right now — Fruits can be any crop.` },
+        { status: 400 }
+      );
+    }
 
     // Comparable recent prices for the same category, to spot outliers.
     const comparable = await prisma.produceListing.findMany({

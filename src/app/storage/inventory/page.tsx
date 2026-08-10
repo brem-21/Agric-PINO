@@ -5,7 +5,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Package, MapPin } from "lucide-react";
 
 const CATEGORY_EMOJI: Record<string, string> = {
-  VEGETABLES: "🥦", GRAINS: "🌾", TUBERS: "🍠", FRUITS: "🍎", LEGUMES: "🫘", LIVESTOCK: "🐄",
+  VEGETABLES: "🥦", TUBERS: "🍠", FRUITS: "🍎",
 };
 
 const STATUS_STYLES: Record<string, string> = {

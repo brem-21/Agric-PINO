@@ -216,7 +216,7 @@ export default function StorageCustomerDetailPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="cropType" className="text-[#1c3a13]">Crop Type *</Label>
-              <Input id="cropType" list="crop-suggestions" placeholder="e.g. Maize" value={form.cropType}
+              <Input id="cropType" list="crop-suggestions" placeholder="e.g. Tomatoes" value={form.cropType}
                 onChange={(e) => update("cropType", e.target.value)} required
                 className="bg-[#fcfcf7] border-[#eeeee9] text-[#1c3a13] rounded-lg focus:ring-[#1c3a13] focus:border-[#1c3a13]" />
               <datalist id="crop-suggestions">

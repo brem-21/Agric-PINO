@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Scope statement:** We're helping tomato farmers in Ghana's Upper East Region reach wholesalers and processors before their harvest spoils, by storing it at nearby cold-chain storage facilities instead of selling within hours of harvest at whatever price is offered. The same model — book a storage facility instead of selling immediately, sell to a bulk buyer once it's safely stored — extends to grain farmers (hermetic dry storage) across the wider Northern Savannah Zone.
+**Scope statement:** We're helping tomato farmers in Ghana's Upper East Region reach wholesalers and processors before their harvest spoils, by storing it at nearby cold-chain storage facilities instead of selling within hours of harvest at whatever price is offered. The same model — book a storage facility instead of selling immediately, sell to a bulk buyer once it's safely stored — extends to yam and other fruit farmers across the wider Northern Savannah Zone, with dry storage for tubers and cold-chain for fresh fruit.
 
 Lorgric is a digital platform built around a single mission: **cutting the post-harvest losses (PHL) that cost Northern Ghana's smallholder farmers 10–50% of every harvest**, and the country as a whole an estimated **US$1.9 billion a year** (APHLIS, 2022; WFP, 2023). Research on the region is consistent about the drivers — inadequate storage, damaged feeder roads, no cold chain, and, above all, a lack of a ready market to sell into before produce spoils. Lorgric addresses each of those directly, as a marketplace, not a report: it gets a farmer's harvest in front of a wholesaler, processor, rider, or storage facility **fast enough to sell before it rots**.
 
@@ -19,6 +19,22 @@ This document walks through every feature currently in the product, organized by
 - Fresh horticultural crops — tomatoes, mangoes, watermelons, leafy vegetables — lose **20–50%**, mostly to heat, bruising in transit, and no cold storage. A study of the **Upper East tomato value chain** (Anaba, 2018) — Lorgric's flagship crop and corridor — found losses compounding at *every* stage: ~10–13% on the farm, **26%** with wholesalers, **20%** at retail, driven above all by a lack of a ready market and no cold-chain storage.
 - Grains fare better but aren't immune: maize loses ~15% to poor drying and storage; sorghum and millet lose ~12.4% in aggregate (APHLIS, 2022).
 - **The gap is closeable, and fast**: a field intervention on Northern Ghana's sorghum value chain — better harvesting, tarpaulin drying, mechanized threshing, faster market access — cut losses from **12.4% to 6.6%** in a single season and nearly doubled participating farmers' income (APHLIS/VCA4D, 2022). Lorgric is built to deliver that same shift at platform scale: storage facilities that buy time, reliable transport, and direct access to wholesale/processor buyers.
+
+### Crop-specific storage and post-harvest management
+
+The nature of post-harvest loss varies by crop, so storage and handling advice has to be tailored to each commodity's own biology rather than treated as one generic problem — this is the research basis for the two storage types (Cold Chain and Hermetic/Dry) a Storage Facility operator chooses between on this platform (see [Section 5](#5-storage-facility-portal--the-aggregation-point)), scoped to the crops Lorgric actually supports: Tomato, Yam, and Fruits.
+
+| Crop | Major Loss Hotspots | Recommended Storage & Handling | Expected Outcome | Platform Storage Type |
+|---|---|---|---|---|
+| **Tomato** | Heat exposure, bruising in transit, over-ripening with no refrigeration — losses compound at every stage: on the farm, with wholesalers, and at retail (Anaba, 2018) | Harvest at the correct ripeness stage; handle gently in ventilated crates rather than sacks; move quickly into cold-chain storage to slow ripening while a buyer is found | Slower ripening, less bruising and rot, and a wider window to reach a wholesale/processor buyer before spoilage | Cold Chain |
+| **Yam** | Weight loss during prolonged storage; bruising during harvesting and transport | Store tubers in a well-ventilated barn-style setup; avoid mechanical injury during harvest and transport; keep storage cool and dry, with periodic inspection | Reduced physiological weight loss, lower rotting rates, and improved market quality | Hermetic/Dry |
+| **Mango** (and other Fruits) | Fruit fly infestation, bruising, long transport times, no cold storage | Harvest at the correct maturity stage; handle carefully in field crates instead of sacks; move into cold-chain storage and refrigerated transport where possible | Reduced physical damage, slower ripening, and extended shelf life | Cold Chain |
+
+*(Grain and legume crops — maize, rice, cowpea, groundnuts — follow their own hermetic-storage playbook, but sit outside Lorgric's current Tomato/Yam/Fruits scope, so they're intentionally left out of this table rather than described as something the platform supports.)*
+
+This Tomato/Yam/Fruits narrowing is now consistent end-to-end: the database schema's `ProduceCategory` enum (`prisma/schema.prisma`), every API route's validation, and every UI file that renders a category label all match this scope. See `POST_HARVEST_LOSS_FINDINGS.md` for the verification trail.
+
+Beyond crop-specific storage, transportation infrastructure matters just as much: poor feeder roads delay the move from farm to market, and that delay alone spoils highly perishable produce — tomatoes, mangoes, and yams among them — regardless of how well it was stored beforehand. This is the reason on-demand logistics booking and real-time tracking (see [Section 6](#6-transport--logistics--booking-fulfilling-and-tracking-deliveries)) sit alongside storage as a first-class feature rather than an afterthought.
 
 ### Feature → cause mapping
 
@@ -165,9 +181,9 @@ The same at-a-glance stat-tile pattern (total orders, active orders, total spent
 ### Marketplace browse & search
 A full storefront experience: debounced text search, multi-select category filters, min/max price range, region filter, a **"spoiling soon — sell first" sort**, and pagination — all reflecting only approved, active listings. Each listing card shows a photo slideshow, price, quantity available, harvest date, a spoilage-urgency badge when the produce is within a week of its expiry date, a **"Stored at [Facility Name]"** badge when the produce is being held at a storage facility, the farmer's name and farm, a live follow-count, and one-click shortcuts to message the farmer or place an order.
 
-Above the results, two **Flagship Corridor** chips — 🍅 Upper East Tomato Corridor and 🌾 Northern Savannah Grain Corridor — apply the exact category/region/crop scope named in this platform's own stated focus. They're real, clickable filters, not just pitch copy: clicking one narrows the marketplace to precisely that corridor's produce.
+Above the results, a **Flagship Corridor** chip — 🍅 Upper East Tomato Corridor — applies the exact category/region/crop scope named in this platform's own stated focus. It's a real, clickable filter, not just pitch copy: clicking it narrows the marketplace to precisely that corridor's produce.
 
-**Why it matters:** this is the buyer's core discovery tool — real filtering (by price, category, region) is what turns a scattered set of smallholder farmers into something actually shoppable, and the urgency sort lets buyers actively route demand toward the produce most at risk of being lost, instead of that surplus quietly rotting unsold. The flagship-corridor chips make the platform's narrowed scope something anyone can click into and verify, not just a claim in a pitch deck.
+**Why it matters:** this is the buyer's core discovery tool — real filtering (by price, category, region) is what turns a scattered set of smallholder farmers into something actually shoppable, and the urgency sort lets buyers actively route demand toward the produce most at risk of being lost, instead of that surplus quietly rotting unsold. The flagship-corridor chip makes the platform's narrowed scope something anyone can click into and verify, not just a claim in a pitch deck.
 
 ### Listing detail & one-flow ordering
 A full listing page with a photo slideshow, the farmer's profile card (star rating, farm size, bio, verified badge), a spoilage-urgency banner when the listing is nearing its expiry date, and — when the produce is stored at a facility — the facility's name and location shown as the effective pickup point, alongside an order panel with a quantity stepper capped at real available stock, a live running total, and a "Place Order" action. Buyers can still message the farmer directly at any time, whether or not the produce is currently in storage. After placing an order, a payment-choice panel appears immediately — mobile money or cash-on-delivery (if the farmer accepts it).
@@ -206,7 +222,7 @@ Commission earned, total sales facilitated, current active listings in storage, 
 **Why it matters:** a real-time view of what's earning the facility money and what needs action, without digging through booking lists manually.
 
 ### Facility profile & location
-Facility name, description, storage type(s) — **Cold Chain** for perishables like tomatoes, mangoes, watermelons, and leafy greens, or **Hermetic/Dry** (PICS-bag style) for grains and legumes like maize, sorghum, millet, rice, cowpea, soybean, and groundnut — advisory capacity in tonnes, accepted produce categories, operating hours, and a location set by GPS or by picking a point on the map. Editing the location re-queues the facility for admin approval, mirroring how a relisted address needs re-vetting.
+Facility name, description, storage type(s) — **Cold Chain** for perishables like tomatoes and fresh fruit, or **Hermetic/Dry** (PICS-bag style) for tubers like yam that keep better in cool, dry conditions than refrigeration — advisory capacity in tonnes, accepted produce categories (Vegetables/Tubers/Fruits — the platform's own Tomato/Yam/Fruit scope), operating hours, and a location set by GPS or by picking a point on the map. Editing the location re-queues the facility for admin approval, mirroring how a relisted address needs re-vetting.
 
 **Why it matters:** this is the information a farmer sees on the map before booking — accurate storage type and location are what makes the booking decision meaningful.
 
@@ -419,4 +435,4 @@ The public landing page displays live counts — active farmers, approved active
 
 ---
 
-*This document reflects the platform's feature set as currently implemented in the codebase.*
+*This document reflects the platform's feature set as currently implemented in the codebase. For an independent, code-level verification of the PHL claims made above (with file/line citations), see [`POST_HARVEST_LOSS_FINDINGS.md`](./POST_HARVEST_LOSS_FINDINGS.md).*

@@ -57,7 +57,7 @@ export default async function ActiveDeliveriesPage() {
   });
 
   const CATEGORY_EMOJI: Record<string, string> = {
-    VEGETABLES: "🥦", GRAINS: "🌾", TUBERS: "🍠", FRUITS: "🍎", LEGUMES: "🫘", LIVESTOCK: "🐄",
+    VEGETABLES: "🥦", TUBERS: "🍠", FRUITS: "🍎",
   };
 
   return (

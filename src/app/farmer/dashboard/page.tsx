@@ -30,11 +30,8 @@ const LISTING_STATUS_VARIANT: Record<string, "default" | "secondary" | "destruct
 
 const CATEGORY_EMOJI: Record<string, string> = {
   VEGETABLES: "🥦",
-  GRAINS: "🌾",
   TUBERS: "🍠",
   FRUITS: "🍎",
-  LEGUMES: "🫘",
-  LIVESTOCK: "🐄",
 };
 
 export default async function FarmerDashboardPage() {

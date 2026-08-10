@@ -102,8 +102,8 @@ export default async function LandingPage() {
               farm, with wholesalers, at retail — because there&apos;s no cold storage and
               no ready buyer. Lorgric lets them book a nearby cold-chain facility instead
               of selling within hours of harvest, reaching wholesalers and processors
-              directly once it&apos;s stored. The same model covers grain farmers across
-              the Northern Savannah Zone with hermetic dry storage.
+              directly once it&apos;s stored. The same model covers yam and fruit farmers
+              across the Northern Savannah Zone with dry and cold-chain storage.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {isAuthenticated ? (

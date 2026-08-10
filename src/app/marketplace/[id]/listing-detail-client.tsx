@@ -64,29 +64,20 @@ interface ListingDetail {
 
 const CATEGORY_EMOJI: Record<string, string> = {
   VEGETABLES: "🥦",
-  GRAINS: "🌾",
   TUBERS: "🍠",
   FRUITS: "🍎",
-  LEGUMES: "🫘",
-  LIVESTOCK: "🐄",
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
   VEGETABLES: "Vegetables",
-  GRAINS: "Grains",
   TUBERS: "Tubers",
   FRUITS: "Fruits",
-  LEGUMES: "Legumes",
-  LIVESTOCK: "Livestock",
 };
 
 const CATEGORY_BADGE: Record<string, "default" | "secondary" | "warning" | "success" | "destructive" | "outline"> = {
   VEGETABLES: "success",
-  GRAINS: "warning",
   TUBERS: "secondary",
   FRUITS: "default",
-  LEGUMES: "outline",
-  LIVESTOCK: "destructive",
 };
 
 function StarRating({ rating, total }: { rating: number; total: number }) {

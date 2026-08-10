@@ -12,11 +12,8 @@ import { LiveRiderTracker } from "@/components/shared/live-rider-tracker";
 
 const CATEGORY_PLACEHOLDER: Record<string, { emoji: string; bg: string }> = {
   VEGETABLES: { emoji: "🥬", bg: "bg-[#eeeee9]" },
-  GRAINS: { emoji: "🌾", bg: "bg-[#eeeee9]" },
   TUBERS: { emoji: "🍠", bg: "bg-[#eeeee9]" },
   FRUITS: { emoji: "🍎", bg: "bg-[#eeeee9]" },
-  LEGUMES: { emoji: "🫘", bg: "bg-[#eeeee9]" },
-  LIVESTOCK: { emoji: "🐄", bg: "bg-[#eeeee9]" },
 };
 
 const STATUS_BADGE: Record<string, "default" | "warning" | "success" | "destructive" | "secondary"> = {
