@@ -21,6 +21,7 @@ import {
   UserPlus,
   Dumbbell,
   ShieldAlert,
+  MapPinOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SignOutButton } from "@/components/shared/signout-button";
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/listings", label: "Listing Approvals", icon: CheckSquare },
   { href: "/admin/storage-facilities", label: "Storage Facilities", icon: Warehouse },
+  { href: "/admin/storage-demand", label: "Unmet Demand", icon: MapPinOff },
   { href: "/admin/complaints", label: "Complaints", icon: AlertTriangle },
   { href: "/admin/disputes", label: "Order Disputes", icon: ShieldAlert },
   { href: "/admin/repeat-offenders", label: "Repeat Offenders", icon: Users },

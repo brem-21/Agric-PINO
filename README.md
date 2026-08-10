@@ -43,6 +43,7 @@ Beyond crop-specific storage, transportation infrastructure matters just as much
 | No ready market — surplus rots unsold, especially at seasonal gluts | Direct farmer↔buyer↔processor marketplace; a `WHOLESALER`/`PROCESSOR` buyer type for bulk sales |
 | Produce sits too long before a sale is found | Listings carry harvest/expiry dates; the marketplace can be sorted by **spoilage urgency**, and farmers see an at-a-glance spoilage-risk flag on their own listings |
 | No cold chain, no hermetic/dry storage for surplus produce | A network of **Storage Facilities** (cold-chain and hermetic-dry) that farmers book a drop-off slot at instead of selling immediately |
+| Storage capacity doesn't get built where it's needed, because there's no evidence of demand to justify financing it | An admin **Unmet Demand** view aggregates rejected bookings, farmers beyond reach of any approved facility, and facility-free districts into a region-by-region, GHS-valued case for NGOs, DFIs, or banks |
 | Poor/damaged feeder roads bruise and delay produce in transit | On-demand logistics booking, real-time tracking, and multi-rider relay handoffs for long hauls |
 | Limited access to post-harvest handling knowledge/extension services | AI layer gives farmers market and handling advice |
 | Fraud, spoiled trust, and payment risk discourage timely, arm's-length sales | Ghana Card verification, encrypted messaging, mobile money + cash-on-delivery, and a two-sided rating system |
@@ -50,6 +51,7 @@ Beyond crop-specific storage, transportation infrastructure matters just as much
 **Quick facts:**
 - **5 user roles**, each with a dedicated portal and dashboard
 - **Storage-facility network**: farmers book a drop-off at a cold-chain or hermetic-dry facility instead of selling immediately; the facility takes a flat **5% commission** on any resulting sale, the farmer keeps 95%
+- **Unmet-demand view for admins**: aggregates rejected storage bookings, farmers with no approved facility within 50km, and facility-free districts into a region-by-region, copyable pitch for storage-capacity investment
 - **Spoilage-aware marketplace**: listings sortable by how soon they need to sell, with visual urgency flags for buyers and farmers alike, and a "Stored at [Facility]" badge once produce is in storage
 - **B2B-first buyer types**: Wholesaler and Processor lead the buyer segment, alongside Retailer, Restaurant, Exporter, and Household
 - **2 payment paths**: MTN/Telecel mobile money (via Paystack) or cash-on-delivery
@@ -335,6 +337,11 @@ The same live, searchable, encrypted direct-messaging inbox every other role has
 The most detailed admin screen: date-range and location/role/device filters, key metrics with period-over-period growth (total events, unique sessions, unique users, distinct event types, average engagement per session), breakdown charts by device/OS/location/event type, and a raw, configurable-column event log.
 
 **Why it matters:** genuine product-analytics tooling that shows engagement patterns and drop-off without needing a third-party analytics vendor.
+
+### Unmet storage demand — the evidence base for new capacity
+Storage facilities can't be booked into existence — someone still has to finance and build them. This screen turns the platform's own booking data into that case: for each region, it aggregates bookings a facility had to reject, farmers whose nearest *approved* facility is beyond a practical 50km reach (or who have none at all), and districts with zero approved facilities outright — each rolled up with the GHS value of produce behind it, the highest-demand districts, and a sample of facilities' own rejection notes. A one-click **Copy pitch summary** turns a region's numbers into pasteable text an admin can hand straight to an NGO, DFI, or bank deciding where to fund the next cold-chain or hermetic-dry facility.
+
+**Why it matters:** the platform's core mechanism for closing the storage gap is matching farmers to facilities that already exist — it has no way to conjure new capacity itself. What it can do is turn "we think Bawku needs a cold room" into "9 tomato farmers in Bawku West had a storage booking rejected this month, worth GHS 24,000, and none of them has an approved facility within 50km" — a specific, sourced, fundable ask instead of a general appeal.
 
 ---
 
