@@ -1,10 +1,22 @@
 import type { NextConfig } from "next";
 
+// This deploy box has no static public IP, so it changes on every stop/start —
+// deriving the allowed origin from NEXT_PUBLIC_APP_URL (already updated per
+// deploy, see .env.local) means that churn no longer requires a code change
+// here too. Falls back to localhost for environments that don't set it (CI).
+const appHost = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").host;
+  } catch {
+    return "localhost:3000";
+  }
+})();
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Lets the dev server accept requests (HMR websocket, server actions) when
   // reached through the remote box's addresses instead of only localhost.
-  allowedDevOrigins: ["3.252.95.86", "172.31.25.39"],
+  allowedDevOrigins: [appHost.split(":")[0], "172.31.25.39"],
   async headers() {
     return [
       {
@@ -43,7 +55,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost:3000", "3.252.95.86:3000", "172.31.25.39:3000"],
+      allowedOrigins: ["localhost:3000", appHost, "172.31.25.39:3000"],
     },
     // Next's internal proxy layer buffers/clones every request body in memory
     // before it reaches route handlers; the implicit default silently stalls
