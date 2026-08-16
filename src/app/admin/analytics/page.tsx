@@ -6,6 +6,7 @@ import {
   TrendingUp, TrendingDown, Minus, Sparkles, Calendar, MapPin, ShieldCheck, Monitor,
   Columns3, CheckSquare, Square, ChevronDown,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface EventRow {
   id: string;
@@ -108,12 +109,98 @@ const FIXED_COLUMNS: ColumnDef[] = [
   },
   { key: "user", label: "User", className: "text-[#1c3a13]", render: (e) => e.userName ?? "—" },
   { key: "session", label: "Session", className: "text-[#1c3a13]/50 text-xs font-mono", render: (e) => e.sessionId.slice(0, 8) },
-  { key: "ip", label: "IP", className: "text-[#1c3a13]/70 text-xs font-mono", render: (e) => e.ip },
+  {
+    key: "ip",
+    label: "IP",
+    className: "text-[#1c3a13]/70 text-xs font-mono",
+    render: (e) => (e.ip && e.ip !== "unknown" ? <IpCell ip={e.ip} /> : e.ip),
+  },
   { key: "location", label: "Location", className: "text-[#1c3a13]/70", render: (e) => e.place ?? "—" },
 ];
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+interface IpLookupResult {
+  country: string | null;
+  regionName: string | null;
+  city: string | null;
+  isp: string | null;
+  org: string | null;
+  query: string;
+}
+
+// Shared across every IpCell instance — the same visitor IP repeats across many rows,
+// so one lookup per IP (not per row) keeps this off ip-api.com's rate limit.
+const ipLookupCache = new Map<string, IpLookupResult | "error">();
+
+function IpTooltipBody({ state }: { state: IpLookupResult | "loading" | "error" | undefined }) {
+  if (!state || state === "loading") {
+    return (
+      <div className="flex items-center gap-1.5 text-[#1c3a13]/50">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Looking up…
+      </div>
+    );
+  }
+  if (state === "error") {
+    return <p className="text-[#1c3a13]/50">No location data available.</p>;
+  }
+  const rows: [string, string | null][] = [
+    ["City", state.city],
+    ["Region", state.regionName],
+    ["Country", state.country],
+    ["ISP", state.isp],
+    ["Org", state.org],
+  ];
+  return (
+    <dl className="space-y-0.5">
+      {rows.filter(([, v]) => v).map(([label, value]) => (
+        <div key={label} className="flex gap-2">
+          <dt className="text-[#1c3a13]/50 w-14 flex-shrink-0">{label}</dt>
+          <dd className="text-[#1c3a13] font-medium">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function IpCell({ ip }: { ip: string }) {
+  const [state, setState] = useState<IpLookupResult | "loading" | "error" | undefined>(
+    ipLookupCache.get(ip)
+  );
+
+  async function load() {
+    if (ipLookupCache.has(ip)) return;
+    setState("loading");
+    try {
+      const res = await fetch(`/api/admin/ip-lookup?ip=${encodeURIComponent(ip)}`);
+      if (!res.ok) throw new Error("lookup failed");
+      const data: IpLookupResult = await res.json();
+      ipLookupCache.set(ip, data);
+      setState(data);
+    } catch {
+      ipLookupCache.set(ip, "error");
+      setState("error");
+    }
+  }
+
+  return (
+    <Tooltip onOpenChange={(open) => { if (open) load(); }}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className="underline decoration-dotted decoration-[#1c3a13]/30 underline-offset-2 hover:text-[#1c3a13]"
+        >
+          {ip}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <IpTooltipBody state={state} />
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 function GrowthBadge({ growth }: { growth: number | null }) {
@@ -450,28 +537,30 @@ export default function AdminAnalyticsPage() {
         ) : events.length === 0 ? (
           <div className="text-center py-16 text-[#1c3a13]/40">No events found.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#eeeee9] bg-[#eeeee9] text-xs text-[#1c3a13] uppercase tracking-wide">
-                  {visibleColumnDefs.map((c) => (
-                    <th key={c.key} className="px-4 py-3 text-left font-medium whitespace-nowrap">{c.label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#eeeee9]">
-                {events.map((e) => (
-                  <tr key={e.id} className="hover:bg-[#eeeee9] transition-colors">
+          <TooltipProvider delayDuration={150}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#eeeee9] bg-[#eeeee9] text-xs text-[#1c3a13] uppercase tracking-wide">
                     {visibleColumnDefs.map((c) => (
-                      <td key={c.key} className={`px-4 py-3 whitespace-nowrap ${c.className ?? ""}`}>
-                        {c.render(e)}
-                      </td>
+                      <th key={c.key} className="px-4 py-3 text-left font-medium whitespace-nowrap">{c.label}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-[#eeeee9]">
+                  {events.map((e) => (
+                    <tr key={e.id} className="hover:bg-[#eeeee9] transition-colors">
+                      {visibleColumnDefs.map((c) => (
+                        <td key={c.key} className={`px-4 py-3 whitespace-nowrap ${c.className ?? ""}`}>
+                          {c.render(e)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </TooltipProvider>
         )}
       </div>
 

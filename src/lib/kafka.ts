@@ -1,13 +1,15 @@
 import { Kafka, Producer, logLevel } from "kafkajs";
 
-const BROKERS = (process.env.KAFKA_BROKERS ?? "localhost:29092").split(",");
-
 let kafka: Kafka | null = null;
 let producer: Producer | null = null;
 
 function getKafka(): Kafka {
   if (!kafka) {
-    kafka = new Kafka({ clientId: "lorgric-app", brokers: BROKERS, logLevel: logLevel.WARN });
+    // Read env lazily (not at module import time) — instrumentation.ts's register() can run
+    // in a separate bundle that imports this module before Next has finished loading .env.local,
+    // which would otherwise freeze this at the "localhost:29092" fallback for the process lifetime.
+    const brokers = (process.env.KAFKA_BROKERS ?? "localhost:29092").split(",");
+    kafka = new Kafka({ clientId: "lorgric-app", brokers, logLevel: logLevel.WARN });
   }
   return kafka;
 }
